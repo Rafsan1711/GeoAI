@@ -1439,45 +1439,63 @@ async function startRun() {
     document.getElementById('pushBtn').disabled = true;
     document.getElementById('reportSection').style.display = 'none';
 
-    log(`Starting run for ${STATE.countries.length} countries...`, 'info');
+    const BATCH_SIZE = 10; // 10 games parallel — safe for HF free tier
+    const total = STATE.countries.length;
+    log(`Starting run for ${total} countries in batches of ${BATCH_SIZE}...`, 'info');
 
-    // Run sequentially (backend may not support high concurrency on free tier)
-    for (let i = 0; i < STATE.countries.length; i++) {
+    let completed = 0;
+
+    for (let i = 0; i < total; i += BATCH_SIZE) {
         if (STATE.stopFlag) { log('Run stopped by user.', 'warn'); break; }
 
-        const country = STATE.countries[i];
-        setCountryStatus(country.name, 'running');
-        log(`[${i+1}/${STATE.countries.length}] Testing: ${country.name}`, 'info');
+        const batch = STATE.countries.slice(i, i + BATCH_SIZE);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(total / BATCH_SIZE);
+        log(`Batch ${batchNum}/${totalBatches}: ${batch.map(c => c.name).join(', ')}`, 'info');
 
-        try {
-            const result = await playGame(country);
-            STATE.results[country.name] = {
-                status: result.guessed ? 'correct' : 'wrong',
-                guessed: result.guessed,
-                questionsAsked: result.questionsAsked,
-                confidence: result.confidence,
-                mdContent: result.mdContent
-            };
-            STATE.stat.ran++;
-            if (result.guessed) STATE.stat.correct++;
-            else STATE.stat.wrong++;
+        // Mark all as running
+        batch.forEach(c => setCountryStatus(c.name, 'running'));
 
-            setCountryStatus(country.name, result.guessed ? 'correct' : 'wrong', result.questionsAsked);
-            log(
-                `  → ${result.guessed ? '✅' : '❌'} ${result.guessed ? 'CORRECT' : 'WRONG'} — guessed "${result.prediction}" in ${result.questionsAsked}q`,
-                result.guessed ? 'ok' : 'err'
-            );
-        } catch(e) {
-            if (e.message === 'STOPPED') { setCountryStatus(country.name, 'pending'); break; }
-            STATE.results[country.name].status = 'wrong';
-            STATE.stat.ran++;
-            STATE.stat.wrong++;
-            setCountryStatus(country.name, 'wrong');
-            log(`  → Error on ${country.name}: ${e.message}`, 'err');
-        }
+        // Run batch in parallel
+        const batchResults = await Promise.allSettled(
+            batch.map(country => playGame(country))
+        );
 
+        // Process results
+        batchResults.forEach((res, idx) => {
+            const country = batch[idx];
+            if (STATE.stopFlag) { setCountryStatus(country.name, 'pending'); return; }
+
+            if (res.status === 'fulfilled') {
+                const result = res.value;
+                STATE.results[country.name] = {
+                    status:        result.guessed ? 'correct' : 'wrong',
+                    guessed:       result.guessed,
+                    questionsAsked: result.questionsAsked,
+                    confidence:    result.confidence,
+                    mdContent:     result.mdContent
+                };
+                STATE.stat.ran++;
+                if (result.guessed) STATE.stat.correct++;
+                else STATE.stat.wrong++;
+                setCountryStatus(country.name, result.guessed ? 'correct' : 'wrong', result.questionsAsked);
+                log(
+                    `  ${result.guessed ? '✅' : '❌'} ${country.name} — guessed "${result.prediction}" in ${result.questionsAsked}q`,
+                    result.guessed ? 'ok' : 'err'
+                );
+            } else {
+                const msg = res.reason?.message || 'Unknown error';
+                STATE.results[country.name].status = 'wrong';
+                STATE.stat.ran++;
+                STATE.stat.wrong++;
+                setCountryStatus(country.name, 'wrong');
+                log(`  ❌ ${country.name} — Error: ${msg}`, 'err');
+            }
+        });
+
+        completed += batch.length;
         updateStats();
-        updateProgress(i + 1, STATE.countries.length);
+        updateProgress(completed, total);
     }
 
     // Finalize
@@ -1779,27 +1797,37 @@ async function pushResults() {
     toast(`Pushed ${pushed} files to GitHub (${failed} failed)`, failed ? 'warn' : 'ok');
 }
 
-async function githubPutFile(base, path, content, branch, headers, message) {
-    // Check if file exists to get its SHA (required for update)
+async function githubPutFile(base, filePath, content, branch, headers, message) {
+    // Encode each path segment separately (not the slashes)
+    const encodedPath = filePath.split('/').map(encodeURIComponent).join('/');
+    const url = base + encodedPath;
+
+    // Get SHA if file exists (required for update, not needed for create)
     let sha = null;
     try {
-        const r = await fetch(base + encodeURIComponent(path) + `?ref=${branch}`, { headers });
+        const r = await fetch(`${url}?ref=${branch}`, { headers });
         if (r.ok) {
             const d = await r.json();
-            sha = d.sha;
+            sha = d.sha || null;
         }
     } catch(_) {}
 
-    const body = {
-        message,
-        content: btoa(unescape(encodeURIComponent(content))),
-        branch
-    };
+    // Encode content to base64 (handles Unicode)
+    const encoded = btoa(
+        Array.from(new TextEncoder().encode(content))
+            .map(b => String.fromCharCode(b))
+            .join('')
+    );
+
+    const body = { message, content: encoded, branch };
     if (sha) body.sha = sha;
 
-    const res = await fetch(base + encodeURIComponent(path), {
-        method: 'PUT', headers, body: JSON.stringify(body)
+    const res = await fetch(url, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(body)
     });
+
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || `HTTP ${res.status}`);
