@@ -1,1382 +1,1866 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GeoAI Bot Runner v2.0</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<style>
-/* ══════════════════════════════════════════════════════════
-   DESIGN TOKENS
-══════════════════════════════════════════════════════════ */
-:root {
-  --bg-0:#070711; --bg-1:#0d0d1a; --bg-2:#12121f; --bg-3:#1a1a2e;
-  --bg-4:#20203a;
-  --indigo:#6366f1; --purple:#a855f7; --cyan:#06b6d4;
-  --emerald:#10b981; --rose:#f43f5e; --amber:#f59e0b; --sky:#38bdf8;
-  --text-1:#f1f5f9; --text-2:#94a3b8; --text-3:#475569;
-  --radius:12px; --radius-sm:8px; --radius-lg:16px;
-  --transition:all .2s ease;
-  --font:'Inter',sans-serif; --mono:'JetBrains Mono',monospace;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:var(--font);background:var(--bg-0);color:var(--text-1);min-height:100vh;overflow-x:hidden}
-a{color:inherit;text-decoration:none}
-button{cursor:pointer;font-family:var(--font)}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>GeoAI · Bot Test Runner</title>
 
-/* ── BG ── */
-.bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.12}
-.orb-1{width:600px;height:600px;background:radial-gradient(circle,var(--indigo),transparent);top:-200px;left:-200px;animation:drift1 18s ease-in-out infinite alternate}
-.orb-2{width:500px;height:500px;background:radial-gradient(circle,var(--purple),transparent);bottom:-150px;right:-150px;animation:drift2 22s ease-in-out infinite alternate}
-.orb-3{width:400px;height:400px;background:radial-gradient(circle,var(--cyan),transparent);top:40%;left:50%;transform:translate(-50%,-50%);animation:drift3 15s ease-in-out infinite alternate}
-@keyframes drift1{to{transform:translate(60px,40px)}}
-@keyframes drift2{to{transform:translate(-40px,-60px)}}
-@keyframes drift3{to{transform:translate(30px,-30px)}}
+    <!-- Font Awesome 6 via cdnjs -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-/* ── LAYOUT ── */
-#app{position:relative;z-index:1}
-.main-content{max-width:1200px;margin:0 auto;padding:24px 20px 100px}
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-/* ── NAVBAR ── */
-.navbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:8px;padding:0 20px;height:58px;background:rgba(7,7,17,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.06)}
-.navbar-logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;letter-spacing:-.3px}
-.navbar-logo-icon{font-size:22px}
-.navbar-logo-badge{background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);color:var(--indigo);font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;letter-spacing:.5px;text-transform:uppercase}
-.navbar-spacer{flex:1}
-.navbar-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--text-2);font-size:13px;font-weight:600;transition:var(--transition)}
-.navbar-btn:hover{background:rgba(255,255,255,.06);color:var(--text-1);border-color:rgba(255,255,255,.15)}
-.navbar-btn.active{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.4);color:var(--indigo)}
-.navbar-btn i{font-size:13px}
-.version-badge{font-size:11px;color:var(--text-3);font-family:var(--mono);padding:0 8px}
+    <style>
+    /* ═══════════════════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════════════════ */
+    :root {
+        --bg-0:   #070710;
+        --bg-1:   #0d0d1a;
+        --bg-2:   #13132a;
+        --bg-3:   #1a1a38;
+        --surface: #1e1e3f;
+        --surface-2: #252550;
 
-/* ── SETTINGS ── */
-.settings-overlay{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s}
-.settings-overlay.open{opacity:1;pointer-events:all}
-.settings-panel{position:fixed;top:66px;left:50%;transform:translateX(-50%) translateY(-16px);z-index:160;width:min(700px,calc(100vw - 32px));background:var(--bg-2);border:1px solid rgba(99,102,241,.2);border-radius:var(--radius-lg);box-shadow:0 40px 100px rgba(0,0,0,.8);padding:28px;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
-.settings-panel.open{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0)}
-.settings-title{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;margin-bottom:24px}
-.settings-title i{color:var(--indigo)}
-.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media(max-width:520px){.settings-grid{grid-template-columns:1fr}}
-.settings-field{display:flex;flex-direction:column;gap:6px}
-.settings-field.full{grid-column:1/-1}
-.settings-field label{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:6px}
-.settings-field label i{color:var(--indigo);font-size:10px}
-.settings-input{background:var(--bg-3);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius-sm);color:var(--text-1);font-family:var(--mono);font-size:13px;padding:10px 14px;outline:none;transition:border-color .2s;width:100%}
-.settings-input:focus{border-color:var(--indigo)}
-.settings-input::placeholder{color:var(--text-3)}
-input[type="password"].settings-input{letter-spacing:3px}
-input[type="password"].settings-input:focus{letter-spacing:normal}
-.settings-hint{font-size:11px;color:var(--text-3);margin-top:3px;display:flex;align-items:center;gap:5px}
-.settings-hint i{color:var(--amber)}
-.settings-row{display:flex;align-items:center;gap:10px;margin-top:18px;padding-top:18px;border-top:1px solid rgba(255,255,255,.06)}
-.concurrency-label{font-size:13px;color:var(--text-2);font-weight:600;flex:1}
-.concurrency-control{display:flex;align-items:center;gap:10px}
-.concurrency-control button{width:30px;height:30px;border-radius:var(--radius-sm);background:var(--bg-3);border:1px solid rgba(255,255,255,.1);color:var(--text-1);font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:var(--transition)}
-.concurrency-control button:hover{background:var(--bg-4);border-color:var(--indigo)}
-.concurrency-val{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--indigo);min-width:24px;text-align:center}
-.settings-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+        --indigo:  #6366f1;
+        --indigo-2:#4f46e5;
+        --purple:  #8b5cf6;
+        --cyan:    #06b6d4;
+        --emerald: #10b981;
+        --amber:   #f59e0b;
+        --rose:    #f43f5e;
+        --slate:   #64748b;
 
-/* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--radius-sm);border:none;font-family:var(--font);font-size:14px;font-weight:700;transition:var(--transition);white-space:nowrap}
-.btn i{font-size:13px}
-.btn-primary{background:linear-gradient(135deg,var(--indigo),var(--purple));color:#fff;box-shadow:0 4px 20px rgba(99,102,241,.3)}
-.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 8px 28px rgba(99,102,241,.4)}
-.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--text-2)}
-.btn-ghost:hover{background:rgba(255,255,255,.06);color:var(--text-1)}
-.btn-danger{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);color:var(--rose)}
-.btn-danger:hover{background:rgba(244,63,94,.2)}
-.btn-sm{padding:7px 14px;font-size:13px}
-.btn:disabled{opacity:.4;pointer-events:none}
+        --text-1: #f1f5f9;
+        --text-2: #94a3b8;
+        --text-3: #64748b;
 
-/* ── HERO ── */
-.hero{padding:60px 20px 40px;text-align:center}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);color:var(--indigo);padding:6px 16px;border-radius:99px;font-size:13px;font-weight:700;margin-bottom:20px}
-.hero-title{font-size:clamp(28px,5vw,52px);font-weight:900;line-height:1.1;letter-spacing:-1.5px;margin-bottom:14px;background:linear-gradient(135deg,#fff 0%,var(--indigo) 50%,var(--cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero-sub{font-size:15px;color:var(--text-2);line-height:1.7;max-width:560px;margin:0 auto 28px}
-.config-status{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:24px}
-.config-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid transparent;transition:var(--transition)}
-.config-pill.ok{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25);color:var(--emerald)}
-.config-pill.warn{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.25);color:var(--amber)}
-.config-pill.error{background:rgba(244,63,94,.1);border-color:rgba(244,63,94,.25);color:var(--rose)}
-.run-controls{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:32px}
+        --radius: 14px;
+        --radius-sm: 8px;
+        --radius-lg: 20px;
+        --transition: 0.25s cubic-bezier(.4,0,.2,1);
 
-/* ── LIVE TIMER ── */
-.live-timer{display:none;align-items:center;gap:10px;justify-content:center;margin-bottom:20px;font-family:var(--mono)}
-.live-timer.visible{display:flex}
-.timer-dot{width:8px;height:8px;border-radius:50%;background:var(--emerald);animation:blink 1s ease-in-out infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.timer-val{font-size:14px;color:var(--text-2);font-weight:600}
-.timer-val span{color:var(--emerald);font-weight:700}
+        --panel-w: 440px;
+    }
 
-/* ── STATS BAR ── */
-.stats-bar{display:grid;grid-template-columns:repeat(7,1fr);background:var(--bg-1);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);overflow:hidden;margin-bottom:32px}
-@media(max-width:700px){.stats-bar{grid-template-columns:repeat(4,1fr)}.stat-item:nth-child(n+5){display:none}}
-.stat-item{padding:16px 8px;text-align:center;border-right:1px solid rgba(255,255,255,.05)}
-.stat-item:last-child{border-right:none}
-.stat-val{font-size:22px;font-weight:800;line-height:1;margin-bottom:3px;font-variant-numeric:tabular-nums;transition:color .3s}
-.stat-val.blue{color:var(--sky)}
-.stat-val.purple{color:var(--purple)}
-.stat-val.green{color:var(--emerald)}
-.stat-val.red{color:var(--rose)}
-.stat-val.amber{color:var(--amber)}
-.stat-val.cyan{color:var(--cyan)}
-.stat-val.indigo{color:var(--indigo)}
-.stat-label{font-size:10px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+    /* ═══════════════════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── PROGRESS ── */
-.progress-wrap{margin-bottom:28px}
-.progress-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.progress-title{font-size:13px;font-weight:700;color:var(--text-2);display:flex;align-items:center;gap:6px}
-.progress-title i{color:var(--indigo)}
-.progress-meta{font-size:12px;color:var(--text-3);font-family:var(--mono)}
-.progress-track{height:8px;background:var(--bg-3);border-radius:99px;overflow:hidden;position:relative}
-.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--indigo),var(--purple),var(--cyan));background-size:200% 100%;transition:width .5s ease;animation:shimmer 2.5s linear infinite}
-@keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+    html, body {
+        height: 100%;
+        background: var(--bg-0);
+        color: var(--text-1);
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 15px;
+        overflow-x: hidden;
+    }
 
-/* ── CONTINENT SECTIONS ── */
-.continent-section{margin-bottom:12px;border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);overflow:hidden;background:var(--bg-1)}
-.continent-header{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;user-select:none;background:var(--bg-2);transition:background .2s}
-.continent-header:hover{background:var(--bg-3)}
-.continent-emoji{font-size:18px}
-.continent-name{font-weight:800;font-size:14px}
-.continent-accuracy{font-size:12px;padding:2px 10px;border-radius:99px;font-weight:700;background:rgba(99,102,241,.1);color:var(--indigo);margin-left:4px}
-.continent-accuracy.good{background:rgba(16,185,129,.1);color:var(--emerald)}
-.continent-accuracy.bad{background:rgba(244,63,94,.1);color:var(--rose)}
-.continent-progress-wrap{flex:1;background:var(--bg-3);height:4px;border-radius:99px;overflow:hidden;margin:0 8px}
-.continent-progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--emerald),var(--cyan));transition:width .5s ease}
-.continent-counts{font-size:11px;color:var(--text-3);font-family:var(--mono);white-space:nowrap}
-.continent-chevron{color:var(--text-3);font-size:11px;transition:transform .25s}
-.continent-section.open .continent-chevron{transform:rotate(180deg)}
-.continent-body{display:none;padding:12px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
-.continent-section.open .continent-body{display:grid}
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface-2); border-radius: 99px; }
 
-/* ── COUNTRY CARDS ── */
-.country-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--bg-2);border:1px solid rgba(255,255,255,.05);cursor:pointer;transition:border-color .2s,background .2s,transform .15s;position:relative;overflow:hidden}
-.country-card:hover{border-color:rgba(99,102,241,.35);background:var(--bg-3);transform:translateY(-1px)}
-.country-card.status-pending{border-color:rgba(255,255,255,.05)}
-.country-card.status-running{border-color:var(--indigo);background:rgba(99,102,241,.08);animation:card-pulse .9s ease-in-out infinite alternate}
-.country-card.status-correct{border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.05)}
-.country-card.status-wrong{border-color:rgba(244,63,94,.3);background:rgba(244,63,94,.05)}
-@keyframes card-pulse{from{box-shadow:none}to{box-shadow:0 0 10px rgba(99,102,241,.25)}}
-.country-flag{font-size:20px;flex-shrink:0;line-height:1}
-.country-info{flex:1;min-width:0}
-.country-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.country-meta{font-size:11px;color:var(--text-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.country-q-badge{font-size:10px;font-family:var(--mono);font-weight:600;padding:2px 6px;border-radius:4px;background:var(--bg-3);color:var(--text-3);white-space:nowrap}
-.country-status-icon{font-size:14px;flex-shrink:0}
-.country-status-icon.pending{color:var(--text-3)}
-.country-status-icon.running{color:var(--indigo);animation:spin .7s linear infinite}
-.country-status-icon.correct{color:var(--emerald)}
-.country-status-icon.wrong{color:var(--rose)}
-@keyframes spin{to{transform:rotate(360deg)}}
+    /* ═══════════════════════════════════════════════════════
+       BACKGROUND DECORATION
+    ═══════════════════════════════════════════════════════ */
+    .bg-orbs {
+        position: fixed; inset: 0; pointer-events: none; z-index: 0;
+        overflow: hidden;
+    }
+    .orb {
+        position: absolute; border-radius: 50%;
+        filter: blur(120px); opacity: 0.18;
+        animation: orb-drift 12s ease-in-out infinite alternate;
+    }
+    .orb-1 { width:600px; height:600px; background:var(--indigo); top:-200px; left:-150px; }
+    .orb-2 { width:500px; height:500px; background:var(--purple); bottom:-150px; right:-100px; animation-delay:-6s; }
+    .orb-3 { width:300px; height:300px; background:var(--cyan);   top:40%;    left:45%;      animation-delay:-3s; }
+    @keyframes orb-drift {
+        from { transform: translate(0,0) scale(1); }
+        to   { transform: translate(30px,20px) scale(1.05); }
+    }
 
-/* ── DRAWER ── */
-.drawer-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .3s}
-.drawer-overlay.open{opacity:1;pointer-events:all}
-.drawer{position:fixed;bottom:0;left:0;right:0;z-index:210;background:var(--bg-1);border-top:1px solid rgba(255,255,255,.08);border-radius:var(--radius-lg) var(--radius-lg) 0 0;max-height:82vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
-.drawer.open{transform:translateY(0)}
-.drawer-handle{padding:12px;display:flex;justify-content:center;flex-shrink:0}
-.drawer-handle-bar{width:40px;height:4px;background:var(--bg-4);border-radius:99px}
-.drawer-header{display:flex;align-items:center;gap:14px;padding:0 20px 16px;flex-shrink:0}
-.drawer-flag{font-size:36px}
-.drawer-country-name{font-size:18px;font-weight:800}
-.drawer-country-sub{font-size:12px;color:var(--text-3);margin-top:3px}
-.drawer-close{margin-left:auto;width:32px;height:32px;border-radius:50%;background:var(--bg-3);border:1px solid rgba(255,255,255,.08);color:var(--text-2);display:flex;align-items:center;justify-content:center;transition:var(--transition)}
-.drawer-close:hover{background:var(--bg-4);color:var(--text-1)}
-.drawer-result-banner{display:flex;align-items:center;gap:10px;padding:12px 20px;font-size:13px;font-weight:700;flex-shrink:0}
-.drawer-result-banner.pending{background:rgba(99,102,241,.08);color:var(--indigo)}
-.drawer-result-banner.correct{background:rgba(16,185,129,.1);color:var(--emerald)}
-.drawer-result-banner.wrong{background:rgba(244,63,94,.1);color:var(--rose)}
-.drawer-body{flex:1;overflow-y:auto;padding:0 20px 12px}
-.drawer-md{font-family:var(--mono);font-size:12px;line-height:1.8;color:var(--text-2);white-space:pre-wrap;word-break:break-word}
-.drawer-placeholder{display:flex;flex-direction:column;align-items:center;gap:12px;padding:48px;color:var(--text-3);text-align:center}
-.drawer-placeholder i{font-size:40px;opacity:.3}
-.drawer-placeholder p{font-size:13px}
-.drawer-actions{display:flex;gap:10px;padding:16px 20px;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0;flex-wrap:wrap}
+    /* ═══════════════════════════════════════════════════════
+       LAYOUT
+    ═══════════════════════════════════════════════════════ */
+    #app {
+        position: relative; z-index: 1;
+        min-height: 100vh;
+        display: flex; flex-direction: column;
+    }
 
-/* ── REPORT SECTION ── */
-.report-section{margin-top:40px}
-.section-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.section-hdr-title{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}
-.section-hdr-title i{color:var(--indigo)}
-.section-hdr-spacer{flex:1}
-.report-box{background:var(--bg-1);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);overflow:hidden;max-height:0;transition:max-height .4s ease;display:flex;flex-direction:column}
-.report-box.open{max-height:700px}
-.report-box-body{flex:1;overflow-y:auto;padding:20px}
-pre.report-md{font-family:var(--mono);font-size:12px;line-height:1.8;color:var(--text-2);white-space:pre-wrap;word-break:break-word}
+    /* ═══════════════════════════════════════════════════════
+       TOP NAVBAR
+    ═══════════════════════════════════════════════════════ */
+    .navbar {
+        position: sticky; top: 0; z-index: 200;
+        display: flex; align-items: center; gap: 12px;
+        padding: 0 24px; height: 60px;
+        background: rgba(7,7,16,.82);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(99,102,241,.15);
+    }
+    .navbar-logo {
+        display: flex; align-items: center; gap: 10px;
+        text-decoration: none; color: var(--text-1);
+    }
+    .navbar-logo-icon {
+        width: 32px; height: 32px;
+        background: linear-gradient(135deg, var(--indigo), var(--purple));
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px;
+    }
+    .navbar-logo-text { font-weight: 700; font-size: 16px; }
+    .navbar-logo-badge {
+        font-size: 10px; font-weight: 600;
+        background: linear-gradient(90deg,var(--indigo),var(--purple));
+        color: #fff; padding: 2px 7px; border-radius: 99px;
+        text-transform: uppercase; letter-spacing: .5px;
+    }
+    .navbar-spacer { flex: 1; }
+    .navbar-btn {
+        display: flex; align-items: center; gap: 8px;
+        padding: 7px 14px; border-radius: var(--radius-sm);
+        border: 1px solid rgba(255,255,255,.08);
+        background: rgba(255,255,255,.04);
+        color: var(--text-2); font-size: 13px; font-family: inherit;
+        cursor: pointer; transition: var(--transition);
+        text-decoration: none;
+    }
+    .navbar-btn:hover { background: rgba(255,255,255,.08); color: var(--text-1); }
+    .navbar-btn i { font-size: 14px; }
+    #settingsToggle.active {
+        background: rgba(99,102,241,.2);
+        border-color: var(--indigo);
+        color: var(--indigo);
+    }
 
-/* ── CONSOLE ── */
-.console-section{margin-top:32px}
-.log-box{background:var(--bg-1);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);height:220px;overflow-y:auto;padding:14px 16px;font-family:var(--mono);font-size:12px;line-height:1.8}
-.log-line{display:flex;gap:8px}
-.log-ts{color:var(--text-3);flex-shrink:0}
-.log-ok{color:var(--emerald)}
-.log-err{color:var(--rose)}
-.log-warn{color:var(--amber)}
-.log-info{color:var(--sky)}
+    /* ═══════════════════════════════════════════════════════
+       SETTINGS PANEL (slides down from top)
+    ═══════════════════════════════════════════════════════ */
+    .settings-overlay {
+        position: fixed; inset: 0; z-index: 150;
+        background: rgba(0,0,0,.5);
+        backdrop-filter: blur(4px);
+        opacity: 0; pointer-events: none;
+        transition: opacity var(--transition);
+    }
+    .settings-overlay.open { opacity: 1; pointer-events: all; }
 
-/* ── TOAST ── */
-#toasts{position:fixed;bottom:24px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px}
-.toast{padding:12px 18px;background:var(--bg-2);border:1px solid rgba(255,255,255,.08);border-left:3px solid var(--indigo);border-radius:var(--radius-sm);font-size:13px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:toast-in .3s ease;max-width:320px}
-.toast.ok{border-left-color:var(--emerald)}
-.toast.err{border-left-color:var(--rose)}
-.toast.warn{border-left-color:var(--amber)}
-@keyframes toast-in{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+    .settings-panel {
+        position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-20px);
+        z-index: 160;
+        width: min(640px, calc(100vw - 32px));
+        background: var(--bg-2);
+        border: 1px solid rgba(99,102,241,.25);
+        border-radius: var(--radius-lg);
+        box-shadow: 0 32px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(99,102,241,.1);
+        padding: 28px;
+        opacity: 0; pointer-events: none;
+        transition: opacity .3s ease, transform .3s ease;
+    }
+    .settings-panel.open {
+        opacity: 1; pointer-events: all;
+        transform: translateX(-50%) translateY(0);
+    }
 
-/* ── FOOTER ── */
-.page-footer{text-align:center;padding:32px;font-size:12px;color:var(--text-3)}
-.page-footer a{color:var(--indigo)}
+    .settings-title {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 17px; font-weight: 700; margin-bottom: 24px;
+    }
+    .settings-title i { color: var(--indigo); }
 
-/* ── EMPTY STATE ── */
-.empty-state{display:flex;flex-direction:column;align-items:center;gap:12px;padding:60px;color:var(--text-3);text-align:center}
-.empty-state i{font-size:44px;opacity:.25}
-.empty-state p{font-size:13px;max-width:280px;line-height:1.6}
-</style>
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media(max-width:520px) { .settings-grid { grid-template-columns: 1fr; } }
+
+    .settings-field {
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    .settings-field label {
+        font-size: 12px; font-weight: 600; color: var(--text-3);
+        text-transform: uppercase; letter-spacing: .5px;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .settings-field label i { color: var(--indigo); font-size: 11px; }
+
+    .settings-input {
+        background: var(--bg-3); border: 1px solid rgba(255,255,255,.08);
+        border-radius: var(--radius-sm); color: var(--text-1);
+        font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        padding: 10px 14px; outline: none;
+        transition: border-color var(--transition);
+        width: 100%;
+    }
+    .settings-input:focus { border-color: var(--indigo); }
+    .settings-input::placeholder { color: var(--text-3); }
+    input[type="password"].settings-input { letter-spacing: 3px; }
+    input[type="password"].settings-input:focus { letter-spacing: normal; }
+
+    .settings-full { grid-column: 1 / -1; }
+
+    .settings-hint {
+        font-size: 11px; color: var(--text-3); margin-top: 3px;
+        display: flex; align-items: center; gap: 5px;
+    }
+    .settings-hint i { color: var(--amber); }
+
+    .settings-actions {
+        display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       BUTTONS
+    ═══════════════════════════════════════════════════════ */
+    .btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 20px; border-radius: var(--radius-sm);
+        border: none; cursor: pointer;
+        font-family: inherit; font-size: 14px; font-weight: 600;
+        transition: var(--transition); text-decoration: none;
+        white-space: nowrap;
+    }
+    .btn i { font-size: 14px; }
+    .btn-primary {
+        background: linear-gradient(135deg, var(--indigo), var(--purple));
+        color: #fff; box-shadow: 0 4px 20px rgba(99,102,241,.35);
+    }
+    .btn-primary:hover { filter: brightness(1.12); transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-ghost {
+        background: transparent;
+        border: 1px solid rgba(255,255,255,.1);
+        color: var(--text-2);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,.06); color: var(--text-1); }
+    .btn-danger {
+        background: rgba(244,63,94,.12);
+        border: 1px solid rgba(244,63,94,.3);
+        color: var(--rose);
+    }
+    .btn-danger:hover { background: rgba(244,63,94,.22); }
+    .btn-sm { padding: 7px 14px; font-size: 13px; }
+    .btn:disabled { opacity: .4; pointer-events: none; }
+
+    /* ═══════════════════════════════════════════════════════
+       HERO SECTION
+    ═══════════════════════════════════════════════════════ */
+    .hero {
+        text-align: center;
+        padding: 80px 24px 48px;
+    }
+    .hero-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: rgba(99,102,241,.12);
+        border: 1px solid rgba(99,102,241,.3);
+        color: var(--indigo); padding: 6px 16px;
+        border-radius: 99px; font-size: 13px; font-weight: 600;
+        margin-bottom: 24px;
+    }
+    .hero-badge i { font-size: 12px; }
+    .hero-title {
+        font-size: clamp(32px, 5vw, 56px);
+        font-weight: 900; line-height: 1.1;
+        letter-spacing: -1px; margin-bottom: 16px;
+        background: linear-gradient(135deg, var(--text-1) 40%, var(--indigo));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .hero-sub {
+        font-size: 17px; color: var(--text-2); max-width: 520px;
+        margin: 0 auto 40px; line-height: 1.65;
+    }
+
+    .hero-warning {
+        display: flex; align-items: center; gap: 10px;
+        background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.25);
+        border-radius: var(--radius); padding: 14px 18px;
+        max-width: 540px; margin: 0 auto 40px;
+        font-size: 13px; color: var(--amber); text-align: left;
+    }
+    .hero-warning i { font-size: 16px; flex-shrink: 0; }
+    .hero-warning span { color: var(--text-2); }
+    .hero-warning span b { color: var(--amber); }
+
+    .config-status {
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        margin-bottom: 32px; flex-wrap: wrap;
+    }
+    .config-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 600;
+        border: 1px solid;
+    }
+    .config-pill.ok    { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.3); color: var(--emerald); }
+    .config-pill.warn  { background: rgba(245,158,11,.1); border-color: rgba(245,158,11,.3); color: var(--amber); }
+    .config-pill.error { background: rgba(244,63,94,.1);  border-color: rgba(244,63,94,.3);  color: var(--rose); }
+    .config-pill i { font-size: 11px; }
+
+    /* ═══════════════════════════════════════════════════════
+       RUN CONTROLS
+    ═══════════════════════════════════════════════════════ */
+    .run-controls {
+        display: flex; align-items: center; gap: 12px;
+        justify-content: center; flex-wrap: wrap;
+    }
+
+    /* Pulse ring on start btn while running */
+    .btn-start-running {
+        animation: pulse-ring 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-ring {
+        0%,100% { box-shadow: 0 4px 20px rgba(99,102,241,.35); }
+        50%      { box-shadow: 0 4px 32px rgba(99,102,241,.7), 0 0 0 8px rgba(99,102,241,.12); }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       STATS BAR
+    ═══════════════════════════════════════════════════════ */
+    .stats-bar {
+        display: flex; gap: 0;
+        background: var(--bg-2);
+        border: 1px solid rgba(255,255,255,.06);
+        border-radius: var(--radius);
+        max-width: 860px; margin: 40px auto 0;
+        overflow: hidden;
+    }
+    .stat-item {
+        flex: 1; padding: 18px 20px;
+        border-right: 1px solid rgba(255,255,255,.06);
+        text-align: center;
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-val {
+        font-size: 26px; font-weight: 800;
+        line-height: 1; margin-bottom: 4px;
+        font-variant-numeric: tabular-nums;
+    }
+    .stat-val.green  { color: var(--emerald); }
+    .stat-val.red    { color: var(--rose); }
+    .stat-val.blue   { color: var(--cyan); }
+    .stat-val.purple { color: var(--purple); }
+    .stat-val.amber  { color: var(--amber); }
+    .stat-label { font-size: 11px; color: var(--text-3); font-weight: 600;
+        text-transform: uppercase; letter-spacing: .5px; }
+
+    /* ═══════════════════════════════════════════════════════
+       MAIN CONTENT
+    ═══════════════════════════════════════════════════════ */
+    .main-content {
+        max-width: 1100px; margin: 0 auto;
+        padding: 32px 24px 80px;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       PROGRESS SECTION
+    ═══════════════════════════════════════════════════════ */
+    .section-header {
+        display: flex; align-items: center; gap: 10px;
+        margin-bottom: 20px;
+    }
+    .section-title {
+        font-size: 16px; font-weight: 700;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .section-title i { color: var(--indigo); }
+    .section-spacer { flex: 1; }
+    .section-meta { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+
+    .overall-progress-bar {
+        height: 6px; background: var(--bg-3);
+        border-radius: 99px; overflow: hidden; margin-bottom: 32px;
+    }
+    .overall-progress-fill {
+        height: 100%; border-radius: 99px;
+        background: linear-gradient(90deg, var(--indigo), var(--purple), var(--cyan));
+        background-size: 200% 100%;
+        transition: width .4s ease;
+        animation: shimmer 2s linear infinite;
+    }
+    @keyframes shimmer {
+        0%  { background-position: 200% center; }
+        100%{ background-position: -200% center; }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       CONTINENT ACCORDION
+    ═══════════════════════════════════════════════════════ */
+    .continent-section {
+        margin-bottom: 16px;
+        border: 1px solid rgba(255,255,255,.06);
+        border-radius: var(--radius);
+        overflow: hidden;
+        background: var(--bg-1);
+    }
+    .continent-header {
+        display: flex; align-items: center; gap: 12px;
+        padding: 14px 18px;
+        cursor: pointer; user-select: none;
+        transition: background var(--transition);
+        background: var(--bg-2);
+    }
+    .continent-header:hover { background: var(--bg-3); }
+    .continent-emoji { font-size: 20px; }
+    .continent-name { font-weight: 700; font-size: 15px; }
+    .continent-progress-wrap {
+        flex: 1; background: var(--bg-3); height: 5px;
+        border-radius: 99px; overflow: hidden; margin: 0 8px;
+    }
+    .continent-progress-fill {
+        height: 100%; border-radius: 99px;
+        background: linear-gradient(90deg, var(--emerald), var(--cyan));
+        transition: width .5s ease;
+    }
+    .continent-counts { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; white-space:nowrap; }
+    .continent-chevron {
+        color: var(--text-3); font-size: 12px;
+        transition: transform var(--transition);
+    }
+    .continent-section.open .continent-chevron { transform: rotate(180deg); }
+    .continent-body {
+        display: none; padding: 14px 16px;
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr));
+        gap: 8px;
+    }
+    .continent-section:not(.open) .continent-body { display: none; }
+    .continent-section.open .continent-body { display: grid; }
+
+    /* ═══════════════════════════════════════════════════════
+       COUNTRY CARD
+    ═══════════════════════════════════════════════════════ */
+    .country-card {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px; border-radius: var(--radius-sm);
+        background: var(--bg-2);
+        border: 1px solid rgba(255,255,255,.05);
+        transition: border-color var(--transition), background var(--transition);
+        cursor: pointer; min-width: 0;
+    }
+    .country-card:hover { border-color: rgba(99,102,241,.3); background: var(--bg-3); }
+    .country-card.status-pending  { border-color: rgba(255,255,255,.05); }
+    .country-card.status-running  { border-color: var(--indigo); background: rgba(99,102,241,.07);
+        animation: card-pulse .8s ease-in-out infinite alternate; }
+    .country-card.status-correct  { border-color: rgba(16,185,129,.3); background: rgba(16,185,129,.06); }
+    .country-card.status-wrong    { border-color: rgba(244,63,94,.3);  background: rgba(244,63,94,.06); }
+
+    @keyframes card-pulse {
+        from { box-shadow: 0 0 0 0 rgba(99,102,241,.15); }
+        to   { box-shadow: 0 0 0 6px rgba(99,102,241,.0); }
+    }
+
+    .country-flag { font-size: 20px; flex-shrink: 0; line-height:1; }
+    .country-info { flex: 1; min-width: 0; }
+    .country-name {
+        font-size: 13px; font-weight: 600; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis;
+    }
+    .country-meta { font-size: 11px; color: var(--text-3); margin-top: 1px; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis; }
+    .country-status-icon { font-size: 15px; flex-shrink: 0; }
+    .country-status-icon.pending  { color: var(--text-3); }
+    .country-status-icon.running  { color: var(--indigo); animation: spin .8s linear infinite; }
+    .country-status-icon.correct  { color: var(--emerald); }
+    .country-status-icon.wrong    { color: var(--rose); }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ═══════════════════════════════════════════════════════
+       DETAIL DRAWER (bottom slide-up panel for country detail)
+    ═══════════════════════════════════════════════════════ */
+    .drawer-overlay {
+        position: fixed; inset: 0; z-index: 300;
+        background: rgba(0,0,0,.6);
+        backdrop-filter: blur(4px);
+        opacity: 0; pointer-events: none;
+        transition: opacity .3s ease;
+    }
+    .drawer-overlay.open { opacity: 1; pointer-events: all; }
+
+    .drawer {
+        position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
+        z-index: 310;
+        width: min(700px, 100vw);
+        max-height: 80vh;
+        background: var(--bg-2);
+        border: 1px solid rgba(99,102,241,.25);
+        border-bottom: none;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        padding: 0 0 40px;
+        transition: transform .35s cubic-bezier(.32,.72,0,1);
+        overflow-y: auto;
+        display: flex; flex-direction: column;
+    }
+    .drawer.open { transform: translateX(-50%) translateY(0); }
+
+    .drawer-handle {
+        display: flex; justify-content: center;
+        padding: 14px 0 0;
+    }
+    .drawer-handle-bar {
+        width: 40px; height: 4px;
+        background: var(--surface-2); border-radius: 99px;
+    }
+    .drawer-header {
+        display: flex; align-items: center; gap: 12px;
+        padding: 18px 24px 0;
+    }
+    .drawer-flag { font-size: 36px; }
+    .drawer-country-name { font-size: 22px; font-weight: 800; }
+    .drawer-country-sub  { font-size: 13px; color: var(--text-3); margin-top: 2px; }
+    .drawer-close {
+        margin-left: auto; background: transparent; border: none;
+        color: var(--text-3); font-size: 18px; cursor: pointer;
+        padding: 8px; border-radius: 8px;
+        transition: var(--transition);
+    }
+    .drawer-close:hover { color: var(--text-1); background: rgba(255,255,255,.06); }
+
+    .drawer-result-banner {
+        margin: 16px 24px 0;
+        padding: 12px 16px; border-radius: var(--radius-sm);
+        display: flex; align-items: center; gap: 10px;
+        font-weight: 600; font-size: 14px;
+    }
+    .drawer-result-banner.correct { background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.3); color: var(--emerald); }
+    .drawer-result-banner.wrong   { background: rgba(244,63,94,.12);  border: 1px solid rgba(244,63,94,.3);  color: var(--rose); }
+    .drawer-result-banner.pending { background: rgba(99,102,241,.1);  border: 1px solid rgba(99,102,241,.25); color: var(--indigo); }
+    .drawer-result-banner i { font-size: 16px; }
+
+    .drawer-body { padding: 16px 24px 0; flex: 1; }
+
+    .drawer-md {
+        font-size: 13px; line-height: 1.7;
+        font-family: 'JetBrains Mono', monospace;
+        color: var(--text-2);
+        background: var(--bg-3);
+        border-radius: var(--radius-sm);
+        padding: 16px; overflow-x: auto;
+        max-height: 400px; overflow-y: auto;
+        white-space: pre-wrap; word-break: break-word;
+        border: 1px solid rgba(255,255,255,.05);
+    }
+    .drawer-placeholder {
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 12px; padding: 48px;
+        color: var(--text-3);
+    }
+    .drawer-placeholder i { font-size: 40px; opacity: .4; }
+
+    .drawer-actions {
+        display: flex; gap: 10px; padding: 16px 24px 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       REPORT SECTION
+    ═══════════════════════════════════════════════════════ */
+    .report-section {
+        margin-top: 48px;
+    }
+    .report-box {
+        background: var(--bg-1); border: 1px solid rgba(255,255,255,.06);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+    .report-box-header {
+        display: flex; align-items: center; gap: 10px;
+        padding: 18px 24px;
+        background: var(--bg-2);
+        border-bottom: 1px solid rgba(255,255,255,.06);
+        cursor: pointer; user-select: none;
+        transition: background var(--transition);
+    }
+    .report-box-header:hover { background: var(--bg-3); }
+    .report-box-title { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+    .report-box-title i { color: var(--amber); }
+    .report-box-chevron { margin-left: auto; color: var(--text-3); transition: transform var(--transition); }
+    .report-box.open .report-box-chevron { transform: rotate(180deg); }
+    .report-box-body { display: none; padding: 24px; }
+    .report-box.open .report-box-body { display: block; }
+
+    .report-md {
+        font-size: 13px; line-height: 1.8;
+        color: var(--text-2);
+        background: var(--bg-3);
+        border-radius: var(--radius-sm);
+        padding: 20px; overflow-x: auto;
+        max-height: 600px; overflow-y: auto;
+        white-space: pre-wrap; word-break: break-word;
+        border: 1px solid rgba(255,255,255,.05);
+        font-family: 'JetBrains Mono', monospace;
+    }
+    /* Markdown render inside .report-md */
+    .report-md h1,h2,h3 { font-family: 'Inter', sans-serif; }
+
+    /* ═══════════════════════════════════════════════════════
+       LOG CONSOLE
+    ═══════════════════════════════════════════════════════ */
+    .log-section { margin-top: 32px; }
+    .log-box {
+        background: #06060f;
+        border: 1px solid rgba(255,255,255,.06);
+        border-radius: var(--radius);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px; color: #94a3b8;
+        height: 180px; overflow-y: auto;
+        padding: 12px 16px;
+    }
+    .log-box p { margin-bottom: 2px; }
+    .log-box p.log-ok   { color: var(--emerald); }
+    .log-box p.log-err  { color: var(--rose); }
+    .log-box p.log-info { color: var(--cyan); }
+    .log-box p.log-warn { color: var(--amber); }
+    .log-ts { color: var(--text-3); margin-right: 8px; }
+
+    /* ═══════════════════════════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════════════════════════ */
+    .page-footer {
+        text-align: center;
+        padding: 32px 24px;
+        color: var(--text-3); font-size: 12px;
+        border-top: 1px solid rgba(255,255,255,.05);
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+
+    /* ═══════════════════════════════════════════════════════
+       TOAST
+    ═══════════════════════════════════════════════════════ */
+    #toast-container {
+        position: fixed; bottom: 24px; right: 24px;
+        z-index: 999; display: flex; flex-direction: column;
+        gap: 10px; pointer-events: none;
+    }
+    .toast {
+        background: var(--bg-2);
+        border: 1px solid rgba(255,255,255,.1);
+        border-left: 3px solid var(--indigo);
+        border-radius: var(--radius-sm);
+        padding: 12px 18px;
+        font-size: 13px; color: var(--text-1);
+        box-shadow: 0 8px 32px rgba(0,0,0,.5);
+        animation: toast-in .3s ease;
+        pointer-events: all;
+    }
+    .toast.ok   { border-left-color: var(--emerald); }
+    .toast.err  { border-left-color: var(--rose); }
+    .toast.warn { border-left-color: var(--amber); }
+    @keyframes toast-in {
+        from { transform: translateX(40px); opacity:0; }
+        to   { transform: translateX(0);    opacity:1; }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       EMPTY / LOADING STATES
+    ═══════════════════════════════════════════════════════ */
+    .empty-state {
+        display: flex; flex-direction: column; align-items: center;
+        gap: 12px; padding: 64px 24px; color: var(--text-3);
+        text-align: center;
+    }
+    .empty-state i { font-size: 48px; opacity: .3; }
+    .empty-state p { font-size: 14px; max-width: 300px; line-height: 1.5; }
+
+    /* ═══════════════════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════════════════ */
+    @media(max-width:600px) {
+        .hero { padding: 60px 16px 32px; }
+        .stats-bar { flex-wrap: wrap; }
+        .stat-item { flex: 1 1 45%; }
+        .continent-body { grid-template-columns: 1fr 1fr; }
+    }
+    </style>
 </head>
 <body>
-<div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
-<div id="toasts"></div>
+
+<!-- Background -->
+<div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
 
 <!-- Settings Overlay -->
-<div class="settings-overlay" id="sOverlay" onclick="closeSettings()"></div>
-<div class="settings-panel" id="sPanel">
-  <div class="settings-title"><i class="fa-solid fa-gear"></i>Configuration</div>
-  <div class="settings-grid">
-    <div class="settings-field">
-      <label><i class="fa-solid fa-server"></i>Backend URL</label>
-      <input type="url" id="cfgUrl" class="settings-input" placeholder="https://your-space.hf.space">
-      <div class="settings-hint"><i class="fa-solid fa-triangle-exclamation"></i>No trailing slash</div>
+<div class="settings-overlay" id="settingsOverlay" onclick="closeSettings()"></div>
+
+<!-- Settings Panel -->
+<div class="settings-panel" id="settingsPanel">
+    <div class="settings-title">
+        <i class="fa-solid fa-gear"></i>
+        Configuration
     </div>
-    <div class="settings-field">
-      <label><i class="fa-brands fa-github"></i>GitHub Token</label>
-      <input type="password" id="cfgToken" class="settings-input" placeholder="ghp_xxxxxxxxxxxx">
-      <div class="settings-hint"><i class="fa-solid fa-triangle-exclamation"></i>Needs repo:write scope</div>
+    <div class="settings-grid">
+        <div class="settings-field">
+            <label><i class="fa-solid fa-server"></i> Backend URL</label>
+            <input type="url" id="cfgBackendUrl" class="settings-input"
+                   placeholder="https://your-space.hf.space">
+            <div class="settings-hint">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                HuggingFace Space URL (no trailing slash)
+            </div>
+        </div>
+        <div class="settings-field">
+            <label><i class="fa-brands fa-github"></i> GitHub Token</label>
+            <input type="password" id="cfgGithubToken" class="settings-input"
+                   placeholder="ghp_xxxxxxxxxxxx">
+            <div class="settings-hint">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                Needs repo write scope
+            </div>
+        </div>
+        <div class="settings-field">
+            <label><i class="fa-solid fa-user"></i> GitHub Owner</label>
+            <input type="text" id="cfgGithubOwner" class="settings-input"
+                   placeholder="rafsan1711">
+        </div>
+        <div class="settings-field">
+            <label><i class="fa-solid fa-code-branch"></i> Repo Name</label>
+            <input type="text" id="cfgGithubRepo" class="settings-input"
+                   placeholder="geoai">
+        </div>
+        <div class="settings-field settings-full">
+            <label><i class="fa-solid fa-code-branch"></i> Branch</label>
+            <input type="text" id="cfgGithubBranch" class="settings-input"
+                   placeholder="main" value="main">
+        </div>
     </div>
-    <div class="settings-field">
-      <label><i class="fa-solid fa-user"></i>GitHub Owner</label>
-      <input type="text" id="cfgOwner" class="settings-input" placeholder="rafsan1711">
+
+    <div class="settings-hint" style="margin-top:12px;">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>Credentials are stored in <b>session memory only</b> — never persisted to localStorage.</span>
     </div>
-    <div class="settings-field">
-      <label><i class="fa-solid fa-code-branch"></i>Repo / Branch</label>
-      <input type="text" id="cfgRepo" class="settings-input" placeholder="geoai">
+
+    <div class="settings-actions">
+        <button class="btn btn-ghost btn-sm" onclick="closeSettings()">
+            <i class="fa-solid fa-xmark"></i> Cancel
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="saveSettings()">
+            <i class="fa-solid fa-floppy-disk"></i> Save & Close
+        </button>
     </div>
-    <div class="settings-field full">
-      <label><i class="fa-solid fa-code-branch"></i>Branch</label>
-      <input type="text" id="cfgBranch" class="settings-input" placeholder="main" value="main">
-    </div>
-  </div>
-  <div class="settings-row">
-    <div class="concurrency-label"><i class="fa-solid fa-bolt" style="color:var(--amber);margin-right:6px"></i>Concurrency (parallel games)</div>
-    <div class="concurrency-control">
-      <button onclick="adjConc(-5)">−</button>
-      <span class="concurrency-val" id="concVal">20</span>
-      <button onclick="adjConc(5)">+</button>
-    </div>
-  </div>
-  <div class="settings-hint" style="margin-top:10px"><i class="fa-solid fa-circle-info"></i>
-    Gunicorn default: 2 workers × sync. Start with <b>10–20</b> to avoid 500 errors. If backend uses <code>--workers 4 --threads 4</code>, you can go up to 50–100.
-  </div>
-  <div class="settings-actions">
-    <button class="btn btn-ghost btn-sm" onclick="closeSettings()"><i class="fa-solid fa-xmark"></i>Cancel</button>
-    <button class="btn btn-primary btn-sm" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i>Save & Close</button>
-  </div>
 </div>
 
-<!-- APP -->
+<!-- Main App -->
 <div id="app">
-  <nav class="navbar">
-    <a href="/" class="navbar-logo">
-      <div class="navbar-logo-icon">🌍</div>
-      <span>GeoAI</span>
-      <span class="navbar-logo-badge">Bot v2.0</span>
-    </a>
-    <span class="version-badge">Full Parallel Mode</span>
-    <div class="navbar-spacer"></div>
-    <a href="/" class="navbar-btn"><i class="fa-solid fa-house"></i><span>Home</span></a>
-    <a href="https://github.com/rafsan1711/geoai" target="_blank" class="navbar-btn"><i class="fa-brands fa-github"></i><span>Repo</span></a>
-    <button class="navbar-btn" id="sBtnToggle" onclick="toggleSettings()"><i class="fa-solid fa-gear"></i><span>Config</span></button>
-  </nav>
 
-  <!-- Hero -->
-  <section class="hero">
-    <div class="hero-badge"><i class="fa-solid fa-robot"></i>Automated Accuracy Benchmark</div>
-    <h1 class="hero-title">GeoAI Bot Runner</h1>
-    <p class="hero-sub">Runs ALL countries fully in parallel. Tracks per-question effectiveness, confusion pairs, and produces a comprehensive analytical REPORT.md.</p>
-    <div class="config-status">
-      <span class="config-pill warn" id="pillBackend"><i class="fa-solid fa-circle"></i>Backend: Not Set</span>
-      <span class="config-pill warn" id="pillGithub"><i class="fa-solid fa-circle"></i>GitHub: Not Set</span>
-      <span class="config-pill warn" id="pillHealth"><i class="fa-solid fa-circle"></i>Health: Unknown</span>
-    </div>
-    <div class="run-controls">
-      <button class="btn btn-primary" id="runBtn" onclick="startRun()"><i class="fa-solid fa-bolt"></i>Run All Countries</button>
-      <button class="btn btn-danger" id="stopBtn" onclick="stopRun()" style="display:none"><i class="fa-solid fa-stop"></i>Abort</button>
-      <button class="btn btn-ghost" id="pushBtn" onclick="pushResults()" disabled><i class="fa-brands fa-github"></i>Push to GitHub</button>
-      <button class="btn btn-ghost" id="dlBtn" onclick="downloadReport()" disabled><i class="fa-solid fa-download"></i>Download Report</button>
-    </div>
-    <div class="live-timer" id="liveTimer">
-      <div class="timer-dot"></div>
-      <div class="timer-val">Elapsed: <span id="timerEl">0s</span> &nbsp;|&nbsp; ETA: <span id="timerEta">—</span> &nbsp;|&nbsp; Rate: <span id="timerRate">—</span></div>
-    </div>
-  </section>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="/" class="navbar-logo">
+            <div class="navbar-logo-icon">🌍</div>
+            <span class="navbar-logo-text">GeoAI</span>
+            <span class="navbar-logo-badge">Bot</span>
+        </a>
+        <div class="navbar-spacer"></div>
+        <a href="/" class="navbar-btn">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </a>
+        <a href="https://github.com/rafsan1711/geoai" target="_blank" class="navbar-btn">
+            <i class="fa-brands fa-github"></i>
+            <span>Repo</span>
+        </a>
+        <button class="navbar-btn" id="settingsToggle" onclick="toggleSettings()">
+            <i class="fa-solid fa-gear"></i>
+            <span>Config</span>
+        </button>
+    </nav>
 
-  <div class="main-content">
-    <!-- Stats -->
-    <div class="stats-bar">
-      <div class="stat-item"><div class="stat-val blue" id="sTotal">—</div><div class="stat-label">Total</div></div>
-      <div class="stat-item"><div class="stat-val purple" id="sCompleted">0</div><div class="stat-label">Done</div></div>
-      <div class="stat-item"><div class="stat-val green" id="sCorrect">0</div><div class="stat-label">Correct</div></div>
-      <div class="stat-item"><div class="stat-val red" id="sWrong">0</div><div class="stat-label">Wrong</div></div>
-      <div class="stat-item"><div class="stat-val amber" id="sAcc">—</div><div class="stat-label">Accuracy</div></div>
-      <div class="stat-item"><div class="stat-val cyan" id="sAvgQ">—</div><div class="stat-label">Avg Qs</div></div>
-      <div class="stat-item"><div class="stat-val indigo" id="sRunning">0</div><div class="stat-label">Running</div></div>
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-badge">
+            <i class="fa-solid fa-robot"></i>
+            Automated Accuracy Test
+        </div>
+        <h1 class="hero-title">GeoAI Bot Runner</h1>
+        <p class="hero-sub">
+            Runs a simulated game session for every country in the dataset.<br>
+            Generates debug reports and pushes results to GitHub automatically.
+        </p>
+
+        <div class="hero-warning" id="configWarning" style="display:none;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>Configure <b>Backend URL</b> and <b>GitHub Token</b> before running. Click <b>Config</b> above.</span>
+        </div>
+
+        <div class="config-status" id="configStatus">
+            <span class="config-pill warn" id="pillBackend"><i class="fa-solid fa-circle"></i> Backend: Not Set</span>
+            <span class="config-pill warn" id="pillGithub"><i class="fa-solid fa-circle"></i> GitHub: Not Set</span>
+            <span class="config-pill warn" id="pillHealth"><i class="fa-solid fa-circle"></i> Health: Unknown</span>
+        </div>
+
+        <div class="run-controls">
+            <button class="btn btn-primary" id="runBtn" onclick="startRun()">
+                <i class="fa-solid fa-play"></i>
+                Run All Countries
+            </button>
+            <button class="btn btn-ghost" id="stopBtn" onclick="stopRun()" style="display:none;">
+                <i class="fa-solid fa-stop"></i>
+                Stop
+            </button>
+            <button class="btn btn-ghost" id="pushBtn" onclick="pushResults()" disabled>
+                <i class="fa-brands fa-github"></i>
+                Push to GitHub
+            </button>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-item">
+                <div class="stat-val blue" id="statTotal">—</div>
+                <div class="stat-label">Total Countries</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val purple" id="statRan">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val green" id="statCorrect">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val red" id="statWrong">0</div>
+                <div class="stat-label">Wrong</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val amber" id="statAcc">—</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+        <!-- Overall progress -->
+        <div class="section-header">
+            <div class="section-title"><i class="fa-solid fa-chart-simple"></i> Progress</div>
+            <div class="section-spacer"></div>
+            <div class="section-meta" id="progressMeta">Not started</div>
+        </div>
+        <div class="overall-progress-bar">
+            <div class="overall-progress-fill" id="overallProgressFill" style="width:0%"></div>
+        </div>
+
+        <!-- Country grid (grouped by continent) -->
+        <div id="countryGrid">
+            <div class="empty-state">
+                <i class="fa-solid fa-earth-americas"></i>
+                <p>Configure the backend URL and click <b>Run All Countries</b> to start.</p>
+            </div>
+        </div>
+
+        <!-- Report Section -->
+        <div class="report-section" id="reportSection" style="display:none;">
+            <div class="section-header">
+                <div class="section-title"><i class="fa-solid fa-file-lines"></i> Summary Report</div>
+            </div>
+            <div class="report-box" id="reportBox">
+                <div class="report-box-header" onclick="toggleReportBox()">
+                    <div class="report-box-title">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        REPORT.md — Full Accuracy Summary
+                    </div>
+                    <i class="fa-solid fa-chevron-down report-box-chevron"></i>
+                </div>
+                <div class="report-box-body">
+                    <pre class="report-md" id="reportMd"></pre>
+                    <div style="display:flex;gap:10px;margin-top:14px;">
+                        <button class="btn btn-ghost btn-sm" onclick="downloadReport()">
+                            <i class="fa-solid fa-download"></i> Download REPORT.md
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="pushResults()">
+                            <i class="fa-brands fa-github"></i> Push to GitHub
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Console -->
+        <div class="log-section">
+            <div class="section-header">
+                <div class="section-title"><i class="fa-solid fa-terminal"></i> Console</div>
+                <div class="section-spacer"></div>
+                <button class="btn btn-ghost btn-sm" onclick="clearLog()">
+                    <i class="fa-solid fa-trash"></i> Clear
+                </button>
+            </div>
+            <div class="log-box" id="logBox">
+                <p class="log-info"><span class="log-ts">[init]</span> GeoAI Bot Runner ready. Configure and run.</p>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Progress -->
-    <div class="progress-wrap">
-      <div class="progress-header">
-        <div class="progress-title"><i class="fa-solid fa-chart-simple"></i>Overall Progress</div>
-        <div class="progress-meta" id="progressMeta">Not started</div>
-      </div>
-      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-    </div>
+    <!-- Footer -->
+    <footer class="page-footer">
+        GeoAI Bot Runner &nbsp;·&nbsp; v1.1.1 &nbsp;·&nbsp;
+        <a href="https://github.com/rafsan1711/geoai">github.com/rafsan1711/geoai</a> &nbsp;·&nbsp;
+        GPL-3.0 License
+    </footer>
 
-    <!-- Country Grid -->
-    <div id="countryGrid">
-      <div class="empty-state"><i class="fa-solid fa-earth-americas"></i><p>Configure Backend URL then click <b>Run All Countries</b></p></div>
-    </div>
-
-    <!-- Report -->
-    <div class="report-section" id="reportSection" style="display:none">
-      <div class="section-hdr">
-        <div class="section-hdr-title"><i class="fa-solid fa-file-lines"></i>REPORT.md Preview</div>
-        <div class="section-hdr-spacer"></div>
-        <button class="btn btn-ghost btn-sm" onclick="toggleReport()"><i class="fa-solid fa-chevron-down"></i>Toggle</button>
-      </div>
-      <div class="report-box" id="reportBox">
-        <div class="report-box-body"><pre class="report-md" id="reportMd"></pre></div>
-      </div>
-    </div>
-
-    <!-- Console -->
-    <div class="console-section">
-      <div class="section-hdr">
-        <div class="section-hdr-title"><i class="fa-solid fa-terminal"></i>Console</div>
-        <div class="section-hdr-spacer"></div>
-        <button class="btn btn-ghost btn-sm" onclick="clearLog()"><i class="fa-solid fa-trash"></i>Clear</button>
-      </div>
-      <div class="log-box" id="logBox"></div>
-    </div>
-  </div>
-
-  <footer class="page-footer">GeoAI Bot Runner v2.0 &nbsp;·&nbsp; <a href="https://github.com/rafsan1711/geoai">github.com/rafsan1711/geoai</a> &nbsp;·&nbsp; GPL-3.0</footer>
 </div>
 
-<!-- Drawer -->
-<div class="drawer-overlay" id="dOverlay" onclick="closeDrawer()"></div>
-<div class="drawer" id="drawer">
-  <div class="drawer-handle"><div class="drawer-handle-bar"></div></div>
-  <div class="drawer-header">
-    <span class="drawer-flag" id="dFlag">🏳</span>
-    <div><div class="drawer-country-name" id="dName">—</div><div class="drawer-country-sub" id="dSub">—</div></div>
-    <button class="drawer-close" onclick="closeDrawer()"><i class="fa-solid fa-xmark"></i></button>
-  </div>
-  <div class="drawer-result-banner pending" id="dBanner"><i class="fa-solid fa-clock"></i><span id="dBannerText">Not run yet</span></div>
-  <div class="drawer-body" id="dBody">
-    <div class="drawer-placeholder"><i class="fa-solid fa-file-code"></i><p>Run this country to see debug report</p></div>
-  </div>
-  <div class="drawer-actions">
-    <button class="btn btn-ghost btn-sm" id="dDlBtn" onclick="downloadCountry()" style="display:none"><i class="fa-solid fa-download"></i>Download MD</button>
-  </div>
+<!-- Country Detail Drawer -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="detailDrawer">
+    <div class="drawer-handle"><div class="drawer-handle-bar"></div></div>
+    <div class="drawer-header">
+        <span class="drawer-flag" id="drawerFlag">🏳</span>
+        <div>
+            <div class="drawer-country-name" id="drawerName">Country</div>
+            <div class="drawer-country-sub" id="drawerSub">Region</div>
+        </div>
+        <button class="drawer-close" onclick="closeDrawer()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <div class="drawer-result-banner pending" id="drawerBanner">
+        <i class="fa-solid fa-clock"></i>
+        <span id="drawerBannerText">Not run yet</span>
+    </div>
+    <div class="drawer-body">
+        <div id="drawerContent">
+            <div class="drawer-placeholder">
+                <i class="fa-solid fa-file-code"></i>
+                <p>Run this country to see its debug report</p>
+            </div>
+        </div>
+    </div>
+    <div class="drawer-actions">
+        <button class="btn btn-ghost btn-sm" id="drawerDownloadBtn" onclick="downloadCountryReport()" style="display:none;">
+            <i class="fa-solid fa-download"></i> Download Debug MD
+        </button>
+    </div>
 </div>
 
 <script>
-/* ════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
    STATE
-════════════════════════════════════════════════════════ */
-const S = {
-  cfg: { url:'', token:'', owner:'rafsan1711', repo:'geoai', branch:'main', concurrency:195 },
-  countries: [], questions: [],
-  results: {},     // name → { status, guessed, questionsAsked, confidence, prediction, mdContent, qLog }
-  running: false, abortFlag: false,
-  runStart: null, timerHandle: null,
-  drawer: null,
-  // analytics
-  qStats: {},          // attr → { asked, totalDelta, correct, wrong }
-  confusion: {},       // actual → { guessed → count }
-  continentStats: {},  // cont → { total, correct, wrong, totalQ }
-};
-const STAT = { total:0, done:0, correct:0, wrong:0, running:0 };
+═══════════════════════════════════════════════════════════════════════════ */
+const STATE = {
+    config: {
+        backendUrl:    '',
+        githubToken:   '',
+        githubOwner:   'rafsan1711',
+        githubRepo:    'geoai',
+        githubBranch:  'main'
+    },
+    countries:    [],    // loaded from data/countries.json
+    questions:    [],    // loaded from data/questions.json
+    results:      {},    // { countryName: { status, guessed, questionsAsked, mdContent } }
+    running:      false,
+    stopFlag:     false,
+    runStartTime: null,
+    currentDrawer: null,
 
-const ORDINAL = {
-  population: ['tiny','small','medium','large','verylarge','huge'],
-  size: ['verysmall','small','medium','large','verylarge'],
+    stat: { total:0, ran:0, correct:0, wrong:0 }
 };
+
+// Answer weights — same as backend ALGORITHM_PARAMS
+const ANSWER_WEIGHTS = {
+    yes:         { match: 5.0,   mismatch: 0.005 },
+    probably:    { match: 2.5,   mismatch: 0.2   },
+    dontknow:    { match: 1.0,   mismatch: 1.0   },
+    probablynot: { match: 0.2,   mismatch: 2.5   },
+    no:          { match: 0.005, mismatch: 5.0   }
+};
+
 const CONTINENT_META = {
-  asia:         { label:'Asia',          emoji:'🌏' },
-  europe:       { label:'Europe',        emoji:'🌍' },
-  africa:       { label:'Africa',        emoji:'🌍' },
-  northamerica: { label:'North America', emoji:'🌎' },
-  southamerica: { label:'South America', emoji:'🌎' },
-  oceania:      { label:'Oceania',       emoji:'🌏' },
+    asia:          { label:'Asia',           emoji:'🌏' },
+    europe:        { label:'Europe',          emoji:'🌍' },
+    africa:        { label:'Africa',          emoji:'🌍' },
+    northamerica:  { label:'North America',   emoji:'🌎' },
+    southamerica:  { label:'South America',   emoji:'🌎' },
+    oceania:       { label:'Oceania',         emoji:'🌏' },
 };
 
-/* ════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
    SETTINGS
-════════════════════════════════════════════════════════ */
-function toggleSettings(){
-  const p=document.getElementById('sPanel'),o=document.getElementById('sOverlay'),b=document.getElementById('sBtnToggle');
-  const open=p.classList.contains('open');
-  if(!open){
-    document.getElementById('cfgUrl').value=S.cfg.url;
-    document.getElementById('cfgToken').value=S.cfg.token;
-    document.getElementById('cfgOwner').value=S.cfg.owner;
-    document.getElementById('cfgRepo').value=S.cfg.repo;
-    document.getElementById('cfgBranch').value=S.cfg.branch;
-    document.getElementById('concVal').textContent=S.cfg.concurrency;
-  }
-  p.classList.toggle('open',!open);o.classList.toggle('open',!open);b.classList.toggle('active',!open);
+═══════════════════════════════════════════════════════════════════════════ */
+function toggleSettings() {
+    const panel = document.getElementById('settingsPanel');
+    const overlay = document.getElementById('settingsOverlay');
+    const btn = document.getElementById('settingsToggle');
+    const open = panel.classList.contains('open');
+    if (!open) {
+        // Populate fields
+        document.getElementById('cfgBackendUrl').value    = STATE.config.backendUrl;
+        document.getElementById('cfgGithubToken').value   = STATE.config.githubToken;
+        document.getElementById('cfgGithubOwner').value   = STATE.config.githubOwner;
+        document.getElementById('cfgGithubRepo').value    = STATE.config.githubRepo;
+        document.getElementById('cfgGithubBranch').value  = STATE.config.githubBranch;
+    }
+    panel.classList.toggle('open', !open);
+    overlay.classList.toggle('open', !open);
+    btn.classList.toggle('active', !open);
 }
-function closeSettings(){
-  document.getElementById('sPanel').classList.remove('open');
-  document.getElementById('sOverlay').classList.remove('open');
-  document.getElementById('sBtnToggle').classList.remove('active');
+function closeSettings() {
+    document.getElementById('settingsPanel').classList.remove('open');
+    document.getElementById('settingsOverlay').classList.remove('open');
+    document.getElementById('settingsToggle').classList.remove('active');
 }
-function saveSettings(){
-  S.cfg.url=document.getElementById('cfgUrl').value.trim().replace(/\/$/,'');
-  S.cfg.token=document.getElementById('cfgToken').value.trim();
-  S.cfg.owner=document.getElementById('cfgOwner').value.trim()||'rafsan1711';
-  S.cfg.repo=document.getElementById('cfgRepo').value.trim()||'geoai';
-  S.cfg.branch=document.getElementById('cfgBranch').value.trim()||'main';
-  S.cfg.concurrency=parseInt(document.getElementById('concVal').textContent)||195;
-  closeSettings(); refreshPills(); toast('Settings saved','ok');
-  log('Config saved. Backend: '+S.cfg.url,'info');
+function saveSettings() {
+    const url = document.getElementById('cfgBackendUrl').value.trim().replace(/\/$/, '');
+    STATE.config.backendUrl   = url;
+    STATE.config.githubToken  = document.getElementById('cfgGithubToken').value.trim();
+    STATE.config.githubOwner  = document.getElementById('cfgGithubOwner').value.trim() || 'rafsan1711';
+    STATE.config.githubRepo   = document.getElementById('cfgGithubRepo').value.trim()  || 'geoai';
+    STATE.config.githubBranch = document.getElementById('cfgGithubBranch').value.trim() || 'main';
+    closeSettings();
+    updateConfigPills();
+    toast('Settings saved for this session', 'ok');
+    log('Config saved. Backend: ' + STATE.config.backendUrl, 'info');
 }
-function adjConc(d){
-  const el=document.getElementById('concVal');
-  el.textContent=Math.max(1,Math.min(195,parseInt(el.textContent||'20')+d));
+function updateConfigPills() {
+    const pb = document.getElementById('pillBackend');
+    const pg = document.getElementById('pillGithub');
+    const warn = document.getElementById('configWarning');
+    if (STATE.config.backendUrl) {
+        pb.className = 'config-pill ok';
+        pb.innerHTML = '<i class="fa-solid fa-circle-check"></i> Backend: Set';
+    } else {
+        pb.className = 'config-pill error';
+        pb.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Backend: Missing';
+    }
+    if (STATE.config.githubToken) {
+        pg.className = 'config-pill ok';
+        pg.innerHTML = '<i class="fa-solid fa-circle-check"></i> GitHub: Set';
+    } else {
+        pg.className = 'config-pill warn';
+        pg.innerHTML = '<i class="fa-solid fa-circle"></i> GitHub: Not Set';
+    }
+    const missing = !STATE.config.backendUrl || !STATE.config.githubToken;
+    warn.style.display = missing ? 'flex' : 'none';
 }
 
-function detectConcurrency(){
-  // Try to auto-detect from /health endpoint worker info
-  // For now set sensible default
-  document.getElementById('concVal').textContent='20';
+/* ═══════════════════════════════════════════════════════════════════════════
+   DATA LOADING
+═══════════════════════════════════════════════════════════════════════════ */
+async function loadData() {
+    log('Loading countries.json and questions.json…', 'info');
+    try {
+        const [cRes, qRes] = await Promise.all([
+            fetch('data/countries.json'),
+            fetch('data/questions.json')
+        ]);
+        if (!cRes.ok) throw new Error('Cannot load data/countries.json');
+        if (!qRes.ok) throw new Error('Cannot load data/questions.json');
+        const countries = await cRes.json();
+        const questions  = await qRes.json();
+
+        STATE.countries = countries;
+        STATE.questions  = (questions.country || []);
+        STATE.stat.total = countries.length;
+
+        document.getElementById('statTotal').textContent = countries.length;
+        log(`Loaded ${countries.length} countries, ${STATE.questions.length} questions`, 'ok');
+        return true;
+    } catch(e) {
+        log('Failed to load data: ' + e.message, 'err');
+        toast('Data load failed: ' + e.message, 'err');
+        return false;
+    }
 }
 
-function refreshPills(){
-  const pb=document.getElementById('pillBackend'),pg=document.getElementById('pillGithub');
-  if(S.cfg.url){pb.className='config-pill ok';pb.innerHTML='<i class="fa-solid fa-circle-check"></i>Backend: Set';}
-  else{pb.className='config-pill error';pb.innerHTML='<i class="fa-solid fa-circle-xmark"></i>Backend: Missing';}
-  if(S.cfg.token){pg.className='config-pill ok';pg.innerHTML='<i class="fa-solid fa-circle-check"></i>GitHub: Set';}
-  else{pg.className='config-pill warn';pg.innerHTML='<i class="fa-solid fa-circle"></i>GitHub: Not Set';}
-}
-
-/* ════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
    HEALTH CHECK
-════════════════════════════════════════════════════════ */
-async function checkHealth(){
-  const ph=document.getElementById('pillHealth');
-  ph.className='config-pill warn'; ph.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i>Checking…';
-  try {
-    const r=await fetch(S.cfg.url+'/health');
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    ph.className='config-pill ok'; ph.innerHTML='<i class="fa-solid fa-circle-check"></i>Backend: Online';
-    log('Health check OK','ok'); return true;
-  } catch(e){
-    ph.className='config-pill error'; ph.innerHTML='<i class="fa-solid fa-circle-xmark"></i>Backend: Offline';
-    log('Health check FAILED: '+e.message,'err'); return false;
-  }
-}
-
-/* ════════════════════════════════════════════════════════
-   API
-════════════════════════════════════════════════════════ */
-async function api(path, method='GET', body=null, retries=3){
-  for(let attempt=1;attempt<=retries;attempt++){
-    try{
-      const opts={method,headers:{'Content-Type':'application/json'}};
-      if(body) opts.body=JSON.stringify(body);
-      const r=await fetch(S.cfg.url+path,opts);
-      if(!r.ok){
-        if(r.status===429 && attempt<retries){
-          await sleep(1500*attempt); continue;
+═══════════════════════════════════════════════════════════════════════════ */
+async function checkHealth() {
+    const ph = document.getElementById('pillHealth');
+    try {
+        ph.className = 'config-pill warn';
+        ph.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking…';
+        const r = await fetch(STATE.config.backendUrl + '/health', { signal: AbortSignal.timeout(8000) });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        if (d.status === 'healthy') {
+            ph.className = 'config-pill ok';
+            ph.innerHTML = '<i class="fa-solid fa-circle-check"></i> Healthy';
+            log('Backend healthy: ' + JSON.stringify(d.data_stats), 'ok');
+            return true;
+        } else {
+            throw new Error('Not healthy');
         }
-        throw new Error('HTTP '+r.status);
-      }
-      return await r.json();
-    } catch(e){
-      if(attempt===retries) throw e;
-      await sleep(Math.min(800*Math.pow(2,attempt-1),6000));
+    } catch(e) {
+        ph.className = 'config-pill error';
+        ph.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Offline';
+        log('Backend health check failed: ' + e.message, 'err');
+        return false;
     }
-  }
 }
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
-/* ════════════════════════════════════════════════════════
-   BOT ANSWER LOGIC — Human-realistic 5-scale
-════════════════════════════════════════════════════════ */
-function botAnswer(country, question){
-  const attr=question.attribute, val=question.value;
-  if(!(attr in country)) return 'dontknow';
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOT: play one complete game for a given country
+   Returns: { guessed: bool, prediction: string, questionsAsked: int, mdContent: string }
+═══════════════════════════════════════════════════════════════════════════ */
+async function playGame(country) {
+    const debugEntries = [];
+    let sessionId;
 
-  const cv=country[attr];
+    // ── Start game ───────────────────────────────────────────────────────
+    const startRes = await apiCall('/api/start-game', 'POST', {
+        category: 'country',
+        questions: STATE.questions
+    });
+    sessionId = startRes.session_id;
 
-  // Boolean
-  if(typeof val==='boolean') return cv===val ? 'yes' : 'no';
+    // ── Question-answer loop ─────────────────────────────────────────────
+    let questionsAsked = 0;
+    let finalPrediction = null;
+    let finalConfidence = 0;
 
-  // Array (neighbors, flagColors, exports, famousFor…)
-  if(Array.isArray(cv)){
-    const v=String(val).toLowerCase();
-    if(cv.some(x=>String(x).toLowerCase()===v)) return 'yes';
-    // partial/semantic near-match → probably
-    if(cv.some(x=>String(x).toLowerCase().includes(v)||v.includes(String(x).toLowerCase()))) return 'probably';
+    for (let round = 0; round < 200; round++) {
+        if (STATE.stopFlag) throw new Error('STOPPED');
+
+        // Get next question
+        const qRes = await apiCall('/api/question', 'POST', { session_id: sessionId });
+        questionsAsked = qRes.questions_asked || questionsAsked;
+        finalConfidence = qRes.confidence || finalConfidence;
+
+        if (qRes.ready_to_guess || !qRes.question) {
+            break; // AI is ready to guess
+        }
+
+        const q = qRes.question;
+
+        // ── Bot logic: answer based on country attributes ────────────────
+        const answer = botAnswer(country, q);
+
+        // Log question entry
+        debugEntries.push({
+            qNum:        questionsAsked + 1,
+            question:    q.question,
+            topBefore:   qRes.top_countries || [],
+            confBefore:  qRes.confidence,
+            activeBefore: qRes.active_items_count,
+            answer,
+            topAfter:    null,
+            confAfter:   null,
+            activeAfter: null
+        });
+
+        // Submit answer
+        const aRes = await apiCall('/api/answer', 'POST', {
+            session_id: sessionId,
+            answer
+        });
+
+        // Complete log entry
+        const last = debugEntries[debugEntries.length - 1];
+        last.topAfter    = aRes.top_countries || [];
+        last.confAfter   = aRes.confidence;
+        last.activeAfter = aRes.active_items_count;
+        questionsAsked   = aRes.questions_asked || questionsAsked + 1;
+        finalConfidence  = aRes.confidence || finalConfidence;
+
+        if (aRes.should_stop) break;
+    }
+
+    // ── Get prediction ────────────────────────────────────────────────────
+    const predRes = await apiCall('/api/predict', 'POST', { session_id: sessionId });
+    finalPrediction = predRes.prediction?.name || null;
+    questionsAsked  = predRes.questions_asked  || questionsAsked;
+    finalConfidence = predRes.confidence        || finalConfidence;
+
+    const guessed = finalPrediction &&
+        finalPrediction.toLowerCase() === country.name.toLowerCase();
+
+    // ── Debug guess entry ─────────────────────────────────────────────────
+    debugEntries.push({ type: 'GUESS', predictedName: finalPrediction, confidence: finalConfidence, questionsAsked });
+
+    // ── Generate Markdown ─────────────────────────────────────────────────
+    const mdContent = generateDebugMd(country, debugEntries, guessed, finalPrediction, finalConfidence);
+
+    return { guessed, prediction: finalPrediction, questionsAsked, confidence: finalConfidence, mdContent };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOT ANSWER LOGIC
+   Given a country object and a question, return the right answer string.
+═══════════════════════════════════════════════════════════════════════════ */
+function botAnswer(country, question) {
+    const attr = question.attribute;
+    const val  = question.value;
+
+    if (!(attr in country)) return 'dontknow';
+
+    const countryVal = country[attr];
+
+    // Boolean attributes
+    if (typeof val === 'boolean') {
+        return countryVal === val ? 'yes' : 'no';
+    }
+
+    // Array attributes (e.g. flagColors, neighbors, famousFor)
+    if (Array.isArray(countryVal)) {
+        const v = String(val).toLowerCase();
+        const found = countryVal.some(x => String(x).toLowerCase() === v);
+        return found ? 'yes' : 'no';
+    }
+
+    // String/number comparison
+    const cv = String(countryVal).toLowerCase();
+    const qv = String(val).toLowerCase();
+
+    if (cv === qv) return 'yes';
+
+    // Numeric ranges: population, area
+    if (attr === 'population') {
+        const order = ['tiny','small','medium','large','verylarge','huge'];
+        const ci = order.indexOf(cv);
+        const qi = order.indexOf(qv);
+        if (ci !== -1 && qi !== -1) {
+            const diff = Math.abs(ci - qi);
+            if (diff === 0) return 'yes';
+            if (diff === 1) return 'probably';
+            return 'no';
+        }
+    }
+
     return 'no';
-  }
-
-  const cvs=String(cv).toLowerCase(), qvs=String(val).toLowerCase();
-  if(cvs===qvs) return 'yes';
-
-  // Ordinal ranges
-  for(const [ordAttr, order] of Object.entries(ORDINAL)){
-    if(attr===ordAttr){
-      const ci=order.indexOf(cvs), qi=order.indexOf(qvs);
-      if(ci!==-1&&qi!==-1){
-        const d=Math.abs(ci-qi);
-        if(d===0) return 'yes';
-        if(d===1) return 'probably';
-        if(d===2) return 'probablynot';
-        return 'no';
-      }
-    }
-  }
-
-  return 'no';
 }
 
-/* ════════════════════════════════════════════════════════
-   PLAY ONE GAME — returns result object
-════════════════════════════════════════════════════════ */
-async function playGame(country){
-  const qLog=[];
-  let sessionId, questionsAsked=0, finalConf=0, finalPred=null;
+/* ═══════════════════════════════════════════════════════════════════════════
+   MARKDOWN GENERATION — same style as frontend debug.js
+═══════════════════════════════════════════════════════════════════════════ */
+function generateDebugMd(country, entries, guessed, finalPrediction, finalConfidence) {
+    const now = new Date();
+    const lines = [];
 
-  // Start
-  const startRes=await api('/api/start-game','POST',{category:'country',questions:S.questions});
-  sessionId=startRes.session_id;
+    lines.push(`# GeoAI Debug Report — ${country.name}`);
+    lines.push('');
+    lines.push('| Field | Value |');
+    lines.push('|-------|-------|');
+    lines.push(`| Country | ${country.emoji || ''} ${country.name} |`);
+    lines.push(`| Continent | ${country.continent || '—'} |`);
+    lines.push(`| Region | ${country.region || '—'} |`);
+    lines.push(`| Generated | ${now.toISOString()} |`);
+    lines.push(`| Result | ${guessed ? '✅ Correct' : '❌ Wrong'} |`);
+    lines.push(`| AI Guessed | ${finalPrediction || '—'} |`);
+    lines.push(`| Final Confidence | ${finalConfidence}% |`);
+    lines.push('');
+    lines.push('---');
+    lines.push('');
 
-  for(let round=0;round<250;round++){
-    if(S.abortFlag) throw new Error('ABORTED');
+    entries.forEach(entry => {
+        if (entry.type === 'GUESS') {
+            lines.push('## 🎯 Final Guess');
+            lines.push('');
+            lines.push('| | |');
+            lines.push('|--|--|');
+            lines.push(`| Predicted | **${entry.predictedName}** |`);
+            lines.push(`| Confidence | ${entry.confidence}% |`);
+            lines.push(`| Questions Asked | ${entry.questionsAsked} |`);
+            lines.push('');
+            return;
+        }
 
-    const qRes=await api('/api/question','POST',{session_id:sessionId});
-    questionsAsked=qRes.questions_asked||questionsAsked;
-    finalConf=qRes.confidence||finalConf;
+        const answerLabel = {
+            yes: '✅ Yes', probably: '🟡 Probably',
+            dontknow: "❓ Don't Know", probablynot: '🟠 Probably Not', no: '❌ No'
+        }[entry.answer] || entry.answer;
 
-    if(qRes.ready_to_guess||!qRes.question) break;
-    const q=qRes.question;
-    const answer=botAnswer(country,q);
+        lines.push(`## Q${entry.qNum}: ${entry.question}`);
+        lines.push('');
+        lines.push(`**Answer:** ${answerLabel}`);
+        lines.push('');
 
-    const entry={
-      qNum:questionsAsked+1, attr:q.attribute, val:q.value,
-      question:q.question, answer,
-      confBefore:qRes.confidence||0, activeBefore:qRes.active_items_count||0,
-      topBefore:qRes.top_countries||[],
-      confAfter:null, activeAfter:null, topAfter:[]
+        const delta = entry.confAfter !== null && entry.confBefore !== null
+            ? (entry.confAfter - entry.confBefore).toFixed(1) : null;
+        const arrow = delta === null ? '' : parseFloat(delta) > 0 ? '📈' : parseFloat(delta) < 0 ? '📉' : '➡️';
+        if (delta !== null) {
+            lines.push(`**Confidence:** ${entry.confBefore}% → ${entry.confAfter}% ${arrow} (${delta > 0 ? '+' : ''}${delta})`);
+            lines.push('');
+        }
+        lines.push(`**Active Countries:** ${entry.activeBefore ?? '?'} → ${entry.activeAfter ?? '?'}`);
+        lines.push('');
+
+        if (entry.topBefore?.length) {
+            lines.push(`### Before — Top ${entry.topBefore.length}`);
+            lines.push('');
+            lines.push('| Rank | Country | Probability |');
+            lines.push('|------|---------|-------------|');
+            entry.topBefore.forEach((c, i) => lines.push(`| ${i+1} | ${c.name} | ${c.prob}% |`));
+            lines.push('');
+        }
+        if (entry.topAfter?.length) {
+            lines.push(`### After — Top ${entry.topAfter.length}`);
+            lines.push('');
+            lines.push('| Rank | Country | Probability | Change |');
+            lines.push('|------|---------|-------------|--------|');
+            const bMap = {};
+            (entry.topBefore || []).forEach(c => bMap[c.name] = c.prob);
+            entry.topAfter.forEach((c, i) => {
+                const prev = bMap[c.name];
+                const d = prev !== undefined ? (c.prob - prev).toFixed(2) : 'new';
+                const a = d === 'new' ? '🆕' : parseFloat(d) > 0 ? `+${d}% 📈` : parseFloat(d) < 0 ? `${d}% 📉` : '±0%';
+                lines.push(`| ${i+1} | ${c.name} | ${c.prob}% | ${a} |`);
+            });
+            lines.push('');
+        }
+        lines.push('---');
+        lines.push('');
+    });
+
+    return lines.join('\n');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REPORT.md GENERATION
+═══════════════════════════════════════════════════════════════════════════ */
+function generateReportMd() {
+    const now = new Date();
+    const results = STATE.results;
+    const countries = STATE.countries;
+
+    // Group by continent
+    const continents = {};
+    countries.forEach(c => {
+        const cont = c.continent || 'unknown';
+        if (!continents[cont]) continents[cont] = { total:0, correct:0, wrong:0, countries:[] };
+        const r = results[c.name];
+        if (!r || r.status === 'pending') return;
+        continents[cont].total++;
+        if (r.guessed) continents[cont].correct++;
+        else continents[cont].wrong++;
+        continents[cont].countries.push({ name: c.name, guessed: r.guessed, q: r.questionsAsked });
+    });
+
+    const total  = Object.values(results).filter(r => r.status !== 'pending').length;
+    const correct= Object.values(results).filter(r => r.guessed).length;
+    const wrong  = total - correct;
+    const acc    = total ? ((correct/total)*100).toFixed(1) : '0.0';
+
+    const lines = [];
+    lines.push('# GeoAI Bot Test Report');
+    lines.push('');
+    lines.push(`> Generated: ${now.toISOString()}`);
+    lines.push('');
+    lines.push('## Overall');
+    lines.push('');
+    lines.push('| Metric | Value |');
+    lines.push('|--------|-------|');
+    lines.push(`| Countries Tested | ${total} / ${countries.length} |`);
+    lines.push(`| Correct | ${correct} |`);
+    lines.push(`| Wrong   | ${wrong} |`);
+    lines.push(`| Accuracy | **${acc}%** |`);
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+    lines.push('## By Continent');
+    lines.push('');
+
+    Object.entries(continents).forEach(([cont, data]) => {
+        const meta = CONTINENT_META[cont] || { label: cont, emoji: '🌐' };
+        const cAcc = data.total ? ((data.correct/data.total)*100).toFixed(1) : '0.0';
+        lines.push(`### ${meta.emoji} ${meta.label}`);
+        lines.push('');
+        lines.push(`**${cAcc}%** accuracy — ${data.correct} / ${data.total} correct`);
+        lines.push('');
+        lines.push('| Country | Result | Questions | Debug |');
+        lines.push('|---------|--------|-----------|-------|');
+        data.countries.forEach(c => {
+            const icon = c.guessed ? '✅' : '❌';
+            const link = `[view](Debug/Countries/${encodeURIComponent(c.name)}.md)`;
+            lines.push(`| ${c.name} | ${icon} | ${c.q} | ${link} |`);
+        });
+        lines.push('');
+    });
+
+    lines.push('---');
+    lines.push('');
+    lines.push('## Countries Guessed Correctly');
+    lines.push('');
+    const correctList = Object.entries(results).filter(([,r])=>r.guessed).map(([n])=>n).sort();
+    lines.push(correctList.map(n => `- ${n}`).join('\n') || '_None_');
+    lines.push('');
+    lines.push('## Countries Not Guessed');
+    lines.push('');
+    const wrongList = Object.entries(results).filter(([,r])=>r.status!=='pending'&&!r.guessed).map(([n])=>n).sort();
+    lines.push(wrongList.map(n => `- ${n}`).join('\n') || '_None_');
+
+    return lines.join('\n');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RUN ORCHESTRATION
+═══════════════════════════════════════════════════════════════════════════ */
+async function startRun() {
+    if (STATE.running) return;
+
+    if (!STATE.config.backendUrl) {
+        toast('Set Backend URL in Config first', 'warn');
+        toggleSettings();
+        return;
+    }
+
+    // Load data if not already
+    if (!STATE.countries.length) {
+        const ok = await loadData();
+        if (!ok) return;
+    }
+
+    // Health check
+    const healthy = await checkHealth();
+    if (!healthy) {
+        toast('Backend is offline. Cannot run.', 'err');
+        return;
+    }
+
+    STATE.running   = true;
+    STATE.stopFlag  = false;
+    STATE.stat      = { total: STATE.countries.length, ran:0, correct:0, wrong:0 };
+    STATE.results   = {};
+    STATE.runStartTime = Date.now();
+
+    // Init results
+    STATE.countries.forEach(c => {
+        STATE.results[c.name] = { status:'pending', guessed:false, questionsAsked:0, mdContent:'' };
+    });
+
+    // Render initial grid
+    renderGrid();
+    updateStats();
+
+    document.getElementById('runBtn').disabled = true;
+    document.getElementById('runBtn').classList.add('btn-start-running');
+    document.getElementById('stopBtn').style.display = '';
+    document.getElementById('pushBtn').disabled = true;
+    document.getElementById('reportSection').style.display = 'none';
+
+    log(`Starting run for ${STATE.countries.length} countries...`, 'info');
+
+    // Run sequentially (backend may not support high concurrency on free tier)
+    for (let i = 0; i < STATE.countries.length; i++) {
+        if (STATE.stopFlag) { log('Run stopped by user.', 'warn'); break; }
+
+        const country = STATE.countries[i];
+        setCountryStatus(country.name, 'running');
+        log(`[${i+1}/${STATE.countries.length}] Testing: ${country.name}`, 'info');
+
+        try {
+            const result = await playGame(country);
+            STATE.results[country.name] = {
+                status: result.guessed ? 'correct' : 'wrong',
+                guessed: result.guessed,
+                questionsAsked: result.questionsAsked,
+                confidence: result.confidence,
+                mdContent: result.mdContent
+            };
+            STATE.stat.ran++;
+            if (result.guessed) STATE.stat.correct++;
+            else STATE.stat.wrong++;
+
+            setCountryStatus(country.name, result.guessed ? 'correct' : 'wrong', result.questionsAsked);
+            log(
+                `  → ${result.guessed ? '✅' : '❌'} ${result.guessed ? 'CORRECT' : 'WRONG'} — guessed "${result.prediction}" in ${result.questionsAsked}q`,
+                result.guessed ? 'ok' : 'err'
+            );
+        } catch(e) {
+            if (e.message === 'STOPPED') { setCountryStatus(country.name, 'pending'); break; }
+            STATE.results[country.name].status = 'wrong';
+            STATE.stat.ran++;
+            STATE.stat.wrong++;
+            setCountryStatus(country.name, 'wrong');
+            log(`  → Error on ${country.name}: ${e.message}`, 'err');
+        }
+
+        updateStats();
+        updateProgress(i + 1, STATE.countries.length);
+    }
+
+    // Finalize
+    STATE.running = false;
+    document.getElementById('runBtn').disabled = false;
+    document.getElementById('runBtn').classList.remove('btn-start-running');
+    document.getElementById('stopBtn').style.display = 'none';
+
+    const hasResults = STATE.stat.ran > 0;
+    document.getElementById('pushBtn').disabled = !hasResults || !STATE.config.githubToken;
+
+    if (hasResults) {
+        const reportMd = generateReportMd();
+        document.getElementById('reportMd').textContent = reportMd;
+        document.getElementById('reportSection').style.display = '';
+        document.getElementById('reportBox').classList.add('open');
+        const acc = ((STATE.stat.correct / STATE.stat.ran) * 100).toFixed(1);
+        log(`Run complete. Accuracy: ${acc}% (${STATE.stat.correct}/${STATE.stat.ran})`, 'ok');
+        toast(`Done! ${acc}% accuracy (${STATE.stat.correct}/${STATE.stat.ran})`, 'ok');
+    }
+}
+
+function stopRun() {
+    STATE.stopFlag = true;
+    STATE.running  = false;
+    document.getElementById('stopBtn').style.display = 'none';
+    document.getElementById('runBtn').disabled = false;
+    document.getElementById('runBtn').classList.remove('btn-start-running');
+    log('Stop requested.', 'warn');
+    toast('Stopping after current country...', 'warn');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GRID RENDER
+═══════════════════════════════════════════════════════════════════════════ */
+function renderGrid() {
+    const grid = document.getElementById('countryGrid');
+    grid.innerHTML = '';
+
+    // Group by continent
+    const groups = {};
+    STATE.countries.forEach(c => {
+        const k = c.continent || 'unknown';
+        if (!groups[k]) groups[k] = [];
+        groups[k].push(c);
+    });
+
+    Object.entries(groups).forEach(([cont, countries]) => {
+        const meta = CONTINENT_META[cont] || { label: cont, emoji: '🌐' };
+        const section = document.createElement('div');
+        section.className = 'continent-section open';
+        section.dataset.continent = cont;
+
+        section.innerHTML = `
+            <div class="continent-header" onclick="toggleContinent(this)">
+                <span class="continent-emoji">${meta.emoji}</span>
+                <span class="continent-name">${meta.label}</span>
+                <div class="continent-progress-wrap">
+                    <div class="continent-progress-fill" data-cont="${cont}" style="width:0%"></div>
+                </div>
+                <span class="continent-counts" data-cont-counts="${cont}">0 / ${countries.length}</span>
+                <i class="fa-solid fa-chevron-down continent-chevron"></i>
+            </div>
+            <div class="continent-body" id="body-${cont}"></div>
+        `;
+
+        const body = section.querySelector('.continent-body');
+        countries.forEach(c => {
+            const card = document.createElement('div');
+            card.className = 'country-card status-pending';
+            card.id = 'card-' + encodeCardId(c.name);
+            card.onclick = () => openDrawer(c.name);
+            card.innerHTML = `
+                <span class="country-flag">${c.emoji || '🏳'}</span>
+                <div class="country-info">
+                    <div class="country-name">${c.name}</div>
+                    <div class="country-meta">${c.region || ''} ${c.subRegion ? '· '+c.subRegion : ''}</div>
+                </div>
+                <span class="country-status-icon pending" id="icon-${encodeCardId(c.name)}">
+                    <i class="fa-regular fa-clock"></i>
+                </span>
+            `;
+            body.appendChild(card);
+        });
+
+        grid.appendChild(section);
+    });
+}
+
+function encodeCardId(name) {
+    return name.replace(/[^a-zA-Z0-9]/g, '_');
+}
+
+function toggleContinent(header) {
+    header.closest('.continent-section').classList.toggle('open');
+}
+
+function setCountryStatus(name, status, questionsAsked) {
+    const id = encodeCardId(name);
+    const card = document.getElementById('card-' + id);
+    const icon = document.getElementById('icon-' + id);
+    if (!card || !icon) return;
+
+    card.className = `country-card status-${status}`;
+
+    const iconMap = {
+        pending: '<i class="fa-regular fa-clock"></i>',
+        running: '<i class="fa-solid fa-spinner"></i>',
+        correct: '<i class="fa-solid fa-circle-check"></i>',
+        wrong:   '<i class="fa-solid fa-circle-xmark"></i>'
+    };
+    icon.className = `country-status-icon ${status}`;
+    icon.innerHTML = iconMap[status] || '';
+
+    if (questionsAsked !== undefined) {
+        const meta = card.querySelector('.country-meta');
+        if (meta) {
+            const country = STATE.countries.find(c => c.name === name);
+            const base = country ? `${country.region || ''}${country.subRegion ? ' · '+country.subRegion : ''}` : '';
+            meta.textContent = base + (questionsAsked ? ` · ${questionsAsked}q` : '');
+        }
+    }
+
+    // Update continent progress
+    const cont = STATE.countries.find(c => c.name === name)?.continent;
+    if (cont) updateContinentProgress(cont);
+}
+
+function updateContinentProgress(cont) {
+    const countries = STATE.countries.filter(c => c.continent === cont);
+    const done = countries.filter(c => {
+        const r = STATE.results[c.name];
+        return r && r.status !== 'pending';
+    }).length;
+    const fill = document.querySelector(`.continent-progress-fill[data-cont="${cont}"]`);
+    const counts = document.querySelector(`[data-cont-counts="${cont}"]`);
+    if (fill) fill.style.width = (done / countries.length * 100) + '%';
+    if (counts) counts.textContent = `${done} / ${countries.length}`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STATS & PROGRESS
+═══════════════════════════════════════════════════════════════════════════ */
+function updateStats() {
+    const s = STATE.stat;
+    document.getElementById('statRan').textContent     = s.ran;
+    document.getElementById('statCorrect').textContent = s.correct;
+    document.getElementById('statWrong').textContent   = s.wrong;
+    document.getElementById('statAcc').textContent     = s.ran
+        ? ((s.correct / s.ran) * 100).toFixed(1) + '%' : '—';
+}
+function updateProgress(done, total) {
+    const pct = Math.round(done / total * 100);
+    document.getElementById('overallProgressFill').style.width = pct + '%';
+    document.getElementById('progressMeta').textContent = `${done} / ${total} (${pct}%)`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COUNTRY DETAIL DRAWER
+═══════════════════════════════════════════════════════════════════════════ */
+function openDrawer(name) {
+    const country = STATE.countries.find(c => c.name === name);
+    if (!country) return;
+    STATE.currentDrawer = name;
+
+    document.getElementById('drawerFlag').textContent = country.emoji || '🏳';
+    document.getElementById('drawerName').textContent = country.name;
+    document.getElementById('drawerSub').textContent  =
+        [country.continent, country.region, country.subRegion].filter(Boolean).join(' · ');
+
+    const r = STATE.results[name];
+    const banner = document.getElementById('drawerBanner');
+    const bannerText = document.getElementById('drawerBannerText');
+    const dlBtn = document.getElementById('drawerDownloadBtn');
+
+    if (!r || r.status === 'pending') {
+        banner.className = 'drawer-result-banner pending';
+        banner.querySelector('i').className = 'fa-solid fa-clock';
+        bannerText.textContent = 'Not run yet';
+        document.getElementById('drawerContent').innerHTML = `
+            <div class="drawer-placeholder">
+                <i class="fa-solid fa-file-code"></i>
+                <p>Run this country to see its debug report</p>
+            </div>`;
+        dlBtn.style.display = 'none';
+    } else {
+        if (r.guessed) {
+            banner.className = 'drawer-result-banner correct';
+            banner.querySelector('i').className = 'fa-solid fa-circle-check';
+            bannerText.textContent = `Correctly guessed in ${r.questionsAsked} questions (${r.confidence}% confidence)`;
+        } else {
+            banner.className = 'drawer-result-banner wrong';
+            banner.querySelector('i').className = 'fa-solid fa-circle-xmark';
+            bannerText.textContent = `Wrong — asked ${r.questionsAsked} questions (${r.confidence}% confidence)`;
+        }
+        document.getElementById('drawerContent').innerHTML =
+            `<pre class="drawer-md">${escHtml(r.mdContent)}</pre>`;
+        dlBtn.style.display = '';
+    }
+
+    document.getElementById('drawerOverlay').classList.add('open');
+    document.getElementById('detailDrawer').classList.add('open');
+}
+
+function closeDrawer() {
+    document.getElementById('drawerOverlay').classList.remove('open');
+    document.getElementById('detailDrawer').classList.remove('open');
+    STATE.currentDrawer = null;
+}
+
+function downloadCountryReport() {
+    const name = STATE.currentDrawer;
+    if (!name) return;
+    const r = STATE.results[name];
+    if (!r?.mdContent) return;
+    downloadBlob(r.mdContent, `${name}.md`, 'text/markdown');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REPORT BOX TOGGLE
+═══════════════════════════════════════════════════════════════════════════ */
+function toggleReportBox() {
+    document.getElementById('reportBox').classList.toggle('open');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DOWNLOAD REPORT
+═══════════════════════════════════════════════════════════════════════════ */
+function downloadReport() {
+    const md = document.getElementById('reportMd').textContent;
+    if (!md) return;
+    downloadBlob(md, 'REPORT.md', 'text/markdown');
+}
+function downloadBlob(content, filename, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GITHUB PUSH
+   Uses GitHub Contents API (no server needed)
+═══════════════════════════════════════════════════════════════════════════ */
+async function pushResults() {
+    if (!STATE.config.githubToken) {
+        toast('GitHub token not set. Configure it first.', 'warn');
+        toggleSettings();
+        return;
+    }
+
+    const ran = Object.entries(STATE.results).filter(([,r]) => r.status !== 'pending');
+    if (!ran.length) { toast('No results to push', 'warn'); return; }
+
+    document.getElementById('pushBtn').disabled = true;
+    toast('Pushing to GitHub…', 'info');
+    log('Starting GitHub push...', 'info');
+
+    const { githubOwner, githubRepo, githubBranch, githubToken } = STATE.config;
+    const base = `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/`;
+    const headers = {
+        'Authorization': `Bearer ${githubToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json',
+        'X-GitHub-Api-Version': '2022-11-28'
     };
 
-    const aRes=await api('/api/answer','POST',{session_id:sessionId, answer});
-    entry.confAfter=aRes.confidence||0;
-    entry.activeAfter=aRes.active_items_count||0;
-    entry.topAfter=aRes.top_countries||[];
-    questionsAsked=aRes.questions_asked||questionsAsked+1;
-    finalConf=aRes.confidence||finalConf;
+    let pushed = 0, failed = 0;
 
-    qLog.push(entry);
-
-    // Track per-attribute effectiveness
-    const delta=(entry.confAfter-entry.confBefore);
-    if(!S.qStats[entry.attr]) S.qStats[entry.attr]={asked:0,totalDelta:0,correct:0,wrong:0};
-    S.qStats[entry.attr].asked++;
-    S.qStats[entry.attr].totalDelta+=delta;
-
-    if(aRes.should_stop) break;
-  }
-
-  const predRes=await api('/api/predict','POST',{session_id:sessionId});
-  finalPred=predRes.prediction?.name||null;
-  questionsAsked=predRes.questions_asked||questionsAsked;
-  finalConf=predRes.confidence||finalConf;
-
-  const guessed=finalPred&&finalPred.toLowerCase()===country.name.toLowerCase();
-
-  // Track per-attr correct/wrong
-  qLog.forEach(e=>{
-    if(guessed) S.qStats[e.attr].correct++;
-    else S.qStats[e.attr].wrong++;
-  });
-
-  // Track confusion
-  if(!guessed && finalPred){
-    if(!S.confusion[country.name]) S.confusion[country.name]={};
-    S.confusion[country.name][finalPred]=(S.confusion[country.name][finalPred]||0)+1;
-  }
-
-  // Track continent stats
-  const cont=country.continent||'unknown';
-  if(!S.continentStats[cont]) S.continentStats[cont]={total:0,correct:0,wrong:0,totalQ:0,fastest:null,slowest:null};
-  const cs=S.continentStats[cont];
-  cs.total++; cs.totalQ+=questionsAsked;
-  if(guessed){cs.correct++;if(!cs.fastest||questionsAsked<cs.fastest.q)cs.fastest={name:country.name,q:questionsAsked};}
-  else cs.wrong++;
-  if(!cs.slowest||questionsAsked>cs.slowest.q) cs.slowest={name:country.name,q:questionsAsked};
-
-  const mdContent=buildDebugMd(country,qLog,guessed,finalPred,finalConf,questionsAsked);
-  return {guessed,prediction:finalPred,questionsAsked,confidence:finalConf,mdContent,qLog};
-}
-
-/* ════════════════════════════════════════════════════════
-   RUN ALL — FULL PARALLEL
-════════════════════════════════════════════════════════ */
-async function startRun(){
-  if(!S.cfg.url){toast('Set Backend URL first','err');toggleSettings();return;}
-
-  const ok=await checkHealth();
-  if(!ok){toast('Backend offline — cannot start','err');return;}
-
-  // Load data
-  try{
-    const [cj,qj]=await Promise.all([
-      fetch('data/countries.json').then(r=>r.json()),
-      fetch('data/questions.json').then(r=>r.json()),
-    ]);
-    S.countries=cj;
-    // questions.json is { country: [...], city: [...], place: [...] }
-    // Backend expects a flat array — extract the "country" key
-    S.questions=Array.isArray(qj) ? qj : (qj.country || Object.values(qj)[0] || []);
-    if(!S.questions.length){toast('No country questions found in questions.json','err');return;}
-    log(`Loaded ${S.countries.length} countries, ${S.questions.length} questions`,'ok');
-  } catch(e){toast('Failed to load data files','err');log('Data load error: '+e.message,'err');return;}
-
-  // Reset
-  S.results={}; S.qStats={}; S.confusion={}; S.continentStats={};
-  S.abortFlag=false; S.running=true; S.runStart=Date.now();
-  Object.assign(STAT,{total:S.countries.length,done:0,correct:0,wrong:0,running:0});
-
-  S.countries.forEach(c=>{S.results[c.name]={status:'pending',guessed:false,questionsAsked:0,confidence:0,prediction:null,mdContent:'',qLog:[]};});
-
-  renderGrid();
-  document.getElementById('sTotal').textContent=STAT.total;
-  document.getElementById('runBtn').disabled=true;
-  document.getElementById('stopBtn').style.display='';
-  document.getElementById('pushBtn').disabled=true;
-  document.getElementById('dlBtn').disabled=true;
-  document.getElementById('reportSection').style.display='none';
-  document.getElementById('liveTimer').classList.add('visible');
-
-  startTimer();
-  log(`🚀 Starting FULL PARALLEL run — ${S.countries.length} countries, concurrency=${S.cfg.concurrency}`,'info');
-
-  const conc=Math.min(S.cfg.concurrency,S.countries.length);
-  const queue=[...S.countries];
-  let active=0, resolveAll;
-  const done=new Promise(r=>resolveAll=r);
-
-  function launchNext(){
-    while(active<conc && queue.length){
-      const country=queue.shift();
-      active++;
-      STAT.running++;
-      updateStats();
-      setCardStatus(country.name,'running');
-
-      playGame(country).then(result=>{
-        if(S.abortFlag){setCardStatus(country.name,'pending');return;}
-        S.results[country.name]={status:result.guessed?'correct':'wrong',...result};
-        STAT.done++; STAT.running--;
-        if(result.guessed) STAT.correct++; else STAT.wrong++;
-        setCardStatus(country.name,result.guessed?'correct':'wrong',result.questionsAsked);
-        log(`${result.guessed?'✅':'❌'} ${country.name} → "${result.prediction}" | ${result.questionsAsked}q | ${result.confidence}%`,result.guessed?'ok':'err');
-        updateStats(); updateProgress();
-      }).catch(e=>{
-        if(S.abortFlag) return;
-        S.results[country.name].status='wrong';
-        STAT.done++; STAT.running++; STAT.wrong++;
-        setCardStatus(country.name,'wrong');
-        log(`❌ ${country.name} — Error: ${e.message}`,'err');
-        updateStats(); updateProgress();
-      }).finally(()=>{
-        active--;
-        if(queue.length) launchNext();
-        else if(active===0) resolveAll();
-      });
+    // Push each country debug MD
+    for (const [name, r] of ran) {
+        if (!r.mdContent) continue;
+        const path = `Debug/Countries/${name}.md`;
+        try {
+            await githubPutFile(base, path, r.mdContent, githubBranch, headers, `bot: debug report for ${name}`);
+            pushed++;
+            if (pushed % 10 === 0) log(`  Pushed ${pushed} files…`, 'info');
+        } catch(e) {
+            failed++;
+            log(`  Failed to push ${name}: ${e.message}`, 'err');
+        }
     }
-    if(active===0&&queue.length===0) resolveAll();
-  }
 
-  launchNext();
-  await done;
-
-  if(!S.abortFlag){
-    finalize();
-  } else {
-    log('⚠️ Run aborted.','warn');
-    stopTimer();
-    document.getElementById('runBtn').disabled=false;
-    document.getElementById('stopBtn').style.display='none';
-    document.getElementById('liveTimer').classList.remove('visible');
-  }
-}
-
-function finalize(){
-  S.running=false;
-  stopTimer();
-  document.getElementById('runBtn').disabled=false;
-  document.getElementById('stopBtn').style.display='none';
-  document.getElementById('liveTimer').classList.remove('visible');
-
-  const acc=STAT.done?(STAT.correct/STAT.done*100).toFixed(1):'0.0';
-  log(`\n🏁 Run complete! Accuracy: ${acc}% (${STAT.correct}/${STAT.done}) | Time: ${elapsedStr()}`,'ok');
-  toast(`Done! ${acc}% accuracy (${STAT.correct}/${STAT.done})`,'ok');
-
-  const reportMd=buildReportMd();
-  document.getElementById('reportMd').textContent=reportMd;
-  document.getElementById('reportSection').style.display='';
-  document.getElementById('reportBox').classList.add('open');
-  document.getElementById('pushBtn').disabled=!(S.cfg.token);
-  document.getElementById('dlBtn').disabled=false;
-  updateStats();
-}
-
-function stopRun(){
-  S.abortFlag=true; S.running=false;
-  document.getElementById('stopBtn').style.display='none';
-  log('Abort requested…','warn');
-  toast('Aborting…','warn');
-}
-
-/* ════════════════════════════════════════════════════════
-   TIMER
-════════════════════════════════════════════════════════ */
-function startTimer(){
-  stopTimer();
-  S.timerHandle=setInterval(()=>{
-    const el=document.getElementById('timerEl');
-    const eta=document.getElementById('timerEta');
-    const rate=document.getElementById('timerRate');
-    if(el) el.textContent=elapsedStr();
-    const elapsed=(Date.now()-S.runStart)/1000;
-    const doneN=STAT.done;
-    const total=STAT.total;
-    if(doneN>0&&elapsed>0){
-      const perS=doneN/elapsed;
-      rate.textContent=(perS*60).toFixed(1)+'/min';
-      const remaining=total-doneN;
-      eta.textContent=remaining>0?formatSec(remaining/perS):'Done';
+    // Push REPORT.md
+    const reportMd = generateReportMd();
+    try {
+        await githubPutFile(base, 'Debug/REPORT.md', reportMd, githubBranch, headers, 'bot: update accuracy report');
+        log('Pushed Debug/REPORT.md', 'ok');
+    } catch(e) {
+        log('Failed to push REPORT.md: ' + e.message, 'err');
+        failed++;
     }
-  },500);
-}
-function stopTimer(){clearInterval(S.timerHandle);S.timerHandle=null;}
-function elapsedStr(){return formatSec((Date.now()-(S.runStart||Date.now()))/1000);}
-function formatSec(s){
-  const m=Math.floor(s/60),sec=Math.floor(s%60);
-  return m>0?`${m}m ${sec}s`:`${sec}s`;
+
+    document.getElementById('pushBtn').disabled = false;
+    const acc = STATE.stat.ran ? ((STATE.stat.correct/STATE.stat.ran)*100).toFixed(1) : '0';
+    log(`Push done. ${pushed} files pushed, ${failed} failed.`, failed ? 'warn' : 'ok');
+    toast(`Pushed ${pushed} files to GitHub (${failed} failed)`, failed ? 'warn' : 'ok');
 }
 
-/* ════════════════════════════════════════════════════════
-   GRID RENDER
-════════════════════════════════════════════════════════ */
-function renderGrid(){
-  const grid=document.getElementById('countryGrid');
-  grid.innerHTML='';
-  const groups={};
-  S.countries.forEach(c=>{const k=c.continent||'unknown';if(!groups[k])groups[k]=[];groups[k].push(c);});
+async function githubPutFile(base, path, content, branch, headers, message) {
+    // Check if file exists to get its SHA (required for update)
+    let sha = null;
+    try {
+        const r = await fetch(base + encodeURIComponent(path) + `?ref=${branch}`, { headers });
+        if (r.ok) {
+            const d = await r.json();
+            sha = d.sha;
+        }
+    } catch(_) {}
 
-  Object.entries(groups).forEach(([cont,countries])=>{
-    const meta=CONTINENT_META[cont]||{label:cont,emoji:'🌐'};
-    const sec=document.createElement('div');
-    sec.className='continent-section open';
-    sec.dataset.continent=cont;
-    sec.innerHTML=`
-      <div class="continent-header" onclick="this.closest('.continent-section').classList.toggle('open');updateChevron(this)">
-        <span class="continent-emoji">${meta.emoji}</span>
-        <span class="continent-name">${meta.label}</span>
-        <span class="continent-accuracy" id="acc-${cont}">—</span>
-        <div class="continent-progress-wrap"><div class="continent-progress-fill" data-cont="${cont}" style="width:0%"></div></div>
-        <span class="continent-counts" data-cc="${cont}">0/${countries.length}</span>
-        <i class="fa-solid fa-chevron-down continent-chevron"></i>
-      </div>
-      <div class="continent-body" id="body-${cont}"></div>`;
-    const body=sec.querySelector('.continent-body');
-    countries.forEach(c=>{
-      const card=document.createElement('div');
-      card.className='country-card status-pending';
-      card.id='card-'+enc(c.name);
-      card.onclick=()=>openDrawer(c.name);
-      card.innerHTML=`
-        <span class="country-flag">${c.emoji||'🏳'}</span>
-        <div class="country-info">
-          <div class="country-name">${c.name}</div>
-          <div class="country-meta" id="meta-${enc(c.name)}">${c.region||''}${c.subRegion?' · '+c.subRegion:''}</div>
-        </div>
-        <span class="country-q-badge" id="qbadge-${enc(c.name)}" style="display:none"></span>
-        <span class="country-status-icon pending" id="icon-${enc(c.name)}"><i class="fa-regular fa-clock"></i></span>`;
-      body.appendChild(card);
+    const body = {
+        message,
+        content: btoa(unescape(encodeURIComponent(content))),
+        branch
+    };
+    if (sha) body.sha = sha;
+
+    const res = await fetch(base + encodeURIComponent(path), {
+        method: 'PUT', headers, body: JSON.stringify(body)
     });
-    grid.appendChild(sec);
-  });
-}
-function updateChevron(h){const ch=h.querySelector('.continent-chevron');if(ch)ch.style.transform=h.closest('.continent-section').classList.contains('open')?'rotate(180deg)':'';}
-function enc(n){return n.replace(/[^a-zA-Z0-9]/g,'_');}
-
-function setCardStatus(name,status,q){
-  const id=enc(name);
-  const card=document.getElementById('card-'+id);
-  const icon=document.getElementById('icon-'+id);
-  const qb=document.getElementById('qbadge-'+id);
-  if(!card) return;
-  card.className='country-card status-'+status;
-  const icons={pending:'<i class="fa-regular fa-clock"></i>',running:'<i class="fa-solid fa-spinner"></i>',correct:'<i class="fa-solid fa-circle-check"></i>',wrong:'<i class="fa-solid fa-circle-xmark"></i>'};
-  if(icon){icon.className='country-status-icon '+status;icon.innerHTML=icons[status]||'';}
-  if(q!==undefined&&qb){qb.style.display='';qb.textContent=q+'q';}
-  // continent progress
-  const cont=S.countries.find(c=>c.name===name)?.continent;
-  if(cont) updateContProg(cont);
-}
-
-function updateContProg(cont){
-  const countries=S.countries.filter(c=>c.continent===cont);
-  const done=countries.filter(c=>{const r=S.results[c.name];return r&&r.status!=='pending';}).length;
-  const correct=countries.filter(c=>S.results[c.name]?.guessed).length;
-  const fill=document.querySelector(`.continent-progress-fill[data-cont="${cont}"]`);
-  const cc=document.querySelector(`[data-cc="${cont}"]`);
-  const accEl=document.getElementById('acc-'+cont);
-  if(fill) fill.style.width=(done/countries.length*100)+'%';
-  if(cc) cc.textContent=`${done}/${countries.length}`;
-  if(accEl&&done>0){
-    const a=(correct/done*100).toFixed(0)+'%';
-    accEl.textContent=a;
-    const pct=correct/done;
-    accEl.className='continent-accuracy '+(pct>=0.9?'good':pct<0.7?'bad':'');
-  }
-}
-
-/* ════════════════════════════════════════════════════════
-   STATS & PROGRESS
-════════════════════════════════════════════════════════ */
-function updateStats(){
-  document.getElementById('sTotal').textContent=STAT.total||'—';
-  document.getElementById('sCompleted').textContent=STAT.done;
-  document.getElementById('sCorrect').textContent=STAT.correct;
-  document.getElementById('sWrong').textContent=STAT.wrong;
-  document.getElementById('sAcc').textContent=STAT.done?(STAT.correct/STAT.done*100).toFixed(1)+'%':'—';
-  document.getElementById('sRunning').textContent=STAT.running;
-  // avg questions
-  const completed=Object.values(S.results).filter(r=>r.status!=='pending'&&r.questionsAsked);
-  const avgQ=completed.length?( completed.reduce((a,r)=>a+r.questionsAsked,0)/completed.length ).toFixed(1):'—';
-  document.getElementById('sAvgQ').textContent=avgQ;
-}
-function updateProgress(){
-  const pct=STAT.total?Math.round(STAT.done/STAT.total*100):0;
-  document.getElementById('progressFill').style.width=pct+'%';
-  document.getElementById('progressMeta').textContent=`${STAT.done} / ${STAT.total} (${pct}%)`;
-}
-
-/* ════════════════════════════════════════════════════════
-   DRAWER
-════════════════════════════════════════════════════════ */
-function openDrawer(name){
-  const c=S.countries.find(x=>x.name===name);
-  if(!c) return;
-  S.drawer=name;
-  document.getElementById('dFlag').textContent=c.emoji||'🏳';
-  document.getElementById('dName').textContent=c.name;
-  document.getElementById('dSub').textContent=[c.continent,c.region,c.subRegion].filter(Boolean).join(' · ');
-  const r=S.results[name];
-  const banner=document.getElementById('dBanner');
-  const bt=document.getElementById('dBannerText');
-  const dlBtn=document.getElementById('dDlBtn');
-  const body=document.getElementById('dBody');
-  if(!r||r.status==='pending'){
-    banner.className='drawer-result-banner pending';
-    banner.querySelector('i').className='fa-solid fa-clock';
-    bt.textContent='Not run yet';
-    body.innerHTML='<div class="drawer-placeholder"><i class="fa-solid fa-file-code"></i><p>Run this country to see debug report</p></div>';
-    dlBtn.style.display='none';
-  } else {
-    if(r.guessed){banner.className='drawer-result-banner correct';banner.querySelector('i').className='fa-solid fa-circle-check';bt.textContent=`Correct in ${r.questionsAsked}q — Confidence: ${r.confidence}%`;}
-    else{banner.className='drawer-result-banner wrong';banner.querySelector('i').className='fa-solid fa-circle-xmark';bt.textContent=`Wrong — guessed "${r.prediction}" | ${r.questionsAsked}q | ${r.confidence}%`;}
-    body.innerHTML=`<pre class="drawer-md">${esc(r.mdContent)}</pre>`;
-    dlBtn.style.display='';
-  }
-  document.getElementById('dOverlay').classList.add('open');
-  document.getElementById('drawer').classList.add('open');
-}
-function closeDrawer(){document.getElementById('dOverlay').classList.remove('open');document.getElementById('drawer').classList.remove('open');S.drawer=null;}
-function downloadCountry(){
-  const r=S.results[S.drawer];
-  if(!r?.mdContent) return;
-  blob(r.mdContent,S.drawer+'.md','text/markdown');
-}
-
-/* ════════════════════════════════════════════════════════
-   REPORT SECTION
-════════════════════════════════════════════════════════ */
-function toggleReport(){document.getElementById('reportBox').classList.toggle('open');}
-function downloadReport(){const md=document.getElementById('reportMd').textContent;if(md) blob(md,'REPORT.md','text/markdown');}
-function blob(content,fname,mime){
-  const u=URL.createObjectURL(new Blob([content],{type:mime}));
-  const a=document.createElement('a');a.href=u;a.download=fname;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);
-}
-
-/* ════════════════════════════════════════════════════════
-   GITHUB PUSH
-════════════════════════════════════════════════════════ */
-async function pushResults(){
-  if(!S.cfg.token){toast('GitHub token not set','warn');return;}
-  const ran=Object.entries(S.results).filter(([,r])=>r.status!=='pending');
-  if(!ran.length){toast('No results to push','warn');return;}
-  document.getElementById('pushBtn').disabled=true;
-  toast('Pushing to GitHub…','info');
-  log('Starting GitHub push…','info');
-
-  const {owner,repo,branch,token}=S.cfg;
-  const base=`https://api.github.com/repos/${owner}/${repo}/contents/`;
-  const hdrs={'Authorization':'Bearer '+token,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json','X-GitHub-Api-Version':'2022-11-28'};
-
-  let pushed=0,failed=0;
-  for(const [name,r] of ran){
-    if(!r.mdContent) continue;
-    try{await ghPut(base,`Debug/Countries/${name}.md`,r.mdContent,branch,hdrs,`bot: debug ${name}`);pushed++;}
-    catch(e){failed++;log(`Failed: ${name} — ${e.message}`,'err');}
-  }
-  try{
-    await ghPut(base,'Debug/REPORT.md',buildReportMd(),branch,hdrs,'bot: update REPORT.md');
-    log('Pushed Debug/REPORT.md','ok');
-  } catch(e){log('Failed REPORT.md: '+e.message,'err');failed++;}
-
-  document.getElementById('pushBtn').disabled=false;
-  log(`Push done. ${pushed} pushed, ${failed} failed.`,failed?'warn':'ok');
-  toast(`Pushed ${pushed} files (${failed} failed)`,failed?'warn':'ok');
-}
-
-async function ghPut(base,path,content,branch,headers,msg){
-  const encoded=btoa(unescape(encodeURIComponent(content)));
-  let sha=undefined;
-  try{const existing=await (await fetch(base+path,{headers})).json();if(existing.sha) sha=existing.sha;}catch(_){}
-  const body={message:msg,content:encoded,branch};
-  if(sha) body.sha=sha;
-  const r=await fetch(base+path,{method:'PUT',headers,body:JSON.stringify(body)});
-  if(!r.ok) throw new Error('HTTP '+r.status);
-}
-
-/* ════════════════════════════════════════════════════════
-   DEBUG MD (per country)
-════════════════════════════════════════════════════════ */
-function buildDebugMd(country,qLog,guessed,finalPred,finalConf,questionsAsked){
-  const now=new Date().toISOString();
-  const L=[];
-  L.push(`# GeoAI Debug Report — ${country.emoji||''} ${country.name}`);
-  L.push('');
-  L.push('## 📋 Summary');
-  L.push('');
-  L.push('| Field | Value |');
-  L.push('|-------|-------|');
-  L.push(`| Country | ${country.emoji||''} **${country.name}** |`);
-  L.push(`| Continent | ${country.continent||'—'} |`);
-  L.push(`| Region | ${country.region||'—'} |`);
-  L.push(`| Sub-Region | ${country.subRegion||'—'} |`);
-  L.push(`| Population | ${country.population||'—'} |`);
-  L.push(`| Result | ${guessed?'✅ **CORRECT**':'❌ **WRONG**'} |`);
-  L.push(`| AI Guessed | ${finalPred||'—'} |`);
-  L.push(`| Confidence | ${finalConf}% |`);
-  L.push(`| Questions Asked | ${questionsAsked} |`);
-  L.push(`| Generated | ${now} |`);
-  L.push('');
-
-  if(!guessed && finalPred){
-    L.push(`> ⚠️ Bot thought of **${finalPred}** instead of **${country.name}**`);
-    L.push('');
-  }
-
-  L.push('---');
-  L.push('');
-  L.push('## 🔍 Question-by-Question Log');
-  L.push('');
-
-  qLog.forEach((e,i)=>{
-    const ansLabel={yes:'✅ Yes',probably:'🟡 Probably',dontknow:"❓ Don't Know",probablynot:'🟠 Probably Not',no:'❌ No'}[e.answer]||e.answer;
-    const delta=e.confAfter!==null?(e.confAfter-e.confBefore).toFixed(1):null;
-    const arrow=delta===null?'':parseFloat(delta)>0?'📈':parseFloat(delta)<0?'📉':'➡️';
-
-    L.push(`### Q${i+1}: ${e.question}`);
-    L.push('');
-    L.push(`- **Attribute:** \`${e.attr}\` = \`${e.val}\``);
-    L.push(`- **Answer:** ${ansLabel}`);
-    if(delta!==null) L.push(`- **Confidence:** ${e.confBefore}% → ${e.confAfter}% ${arrow} (${parseFloat(delta)>0?'+':''}${delta})`);
-    L.push(`- **Active Countries:** ${e.activeBefore} → ${e.activeAfter}`);
-    L.push('');
-
-    if(e.topBefore?.length){
-      L.push(`**Top ${e.topBefore.length} before:**`);
-      L.push('| Rank | Country | Prob |');
-      L.push('|------|---------|------|');
-      e.topBefore.forEach((c,j)=>L.push(`| ${j+1} | ${c.name} | ${c.prob}% |`));
-      L.push('');
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `HTTP ${res.status}`);
     }
-    if(e.topAfter?.length){
-      const bMap={};(e.topBefore||[]).forEach(c=>bMap[c.name]=c.prob);
-      L.push(`**Top ${e.topAfter.length} after:**`);
-      L.push('| Rank | Country | Prob | Δ |');
-      L.push('|------|---------|------|---|');
-      e.topAfter.forEach((c,j)=>{
-        const prev=bMap[c.name];
-        const d=prev!==undefined?(c.prob-prev).toFixed(2):'new';
-        const a=d==='new'?'🆕':parseFloat(d)>0?`+${d}% 📈`:parseFloat(d)<0?`${d}% 📉`:'±0%';
-        L.push(`| ${j+1} | ${c.name} | ${c.prob}% | ${a} |`);
-      });
-      L.push('');
+    return res.json();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   API HELPER
+═══════════════════════════════════════════════════════════════════════════ */
+async function apiCall(endpoint, method, data) {
+    const url = STATE.config.backendUrl + endpoint;
+    const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: data ? JSON.stringify(data) : undefined,
+        signal: AbortSignal.timeout(30000)
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
     }
-    L.push('---');
-    L.push('');
-  });
-
-  L.push('## 🎯 Final Guess');
-  L.push('');
-  L.push('| | |');
-  L.push('|--|--|');
-  L.push(`| **Prediction** | ${finalPred||'—'} |`);
-  L.push(`| **Correct Answer** | ${country.name} |`);
-  L.push(`| **Confidence** | ${finalConf}% |`);
-  L.push(`| **Questions Asked** | ${questionsAsked} |`);
-  L.push(`| **Verdict** | ${guessed?'✅ CORRECT':'❌ WRONG'} |`);
-  L.push('');
-
-  return L.join('\n');
+    return res.json();
 }
 
-/* ════════════════════════════════════════════════════════
-   REPORT.md — PROFESSIONAL ANALYTICAL REPORT
-════════════════════════════════════════════════════════ */
-function buildReportMd(){
-  const now=new Date();
-  const results=S.results;
-  const countries=S.countries;
-
-  const ran=Object.values(results).filter(r=>r.status!=='pending');
-  const correct=ran.filter(r=>r.guessed).length;
-  const wrong=ran.length-correct;
-  const acc=ran.length?(correct/ran.length*100).toFixed(2):'0.00';
-  const totalQ=ran.reduce((a,r)=>a+r.questionsAsked,0);
-  const avgQ=ran.length?(totalQ/ran.length).toFixed(1):'—';
-  const elapsed=S.runStart?formatSec((now-S.runStart)/1000):'—';
-
-  const sortedByQ=[...ran].filter(r=>r.questionsAsked>0).sort((a,b)=>a.questionsAsked-b.questionsAsked);
-  const fastest=sortedByQ.slice(0,5);
-  const slowest=[...sortedByQ].reverse().slice(0,5);
-  const wrongList=ran.filter(r=>!r.guessed);
-  const correctList=ran.filter(r=>r.guessed);
-
-  // Confusion pairs
-  const confPairs=[];
-  Object.entries(S.confusion).forEach(([actual,guesses])=>{
-    Object.entries(guesses).forEach(([guessed,count])=>{
-      confPairs.push({actual,guessed,count});
-    });
-  });
-  confPairs.sort((a,b)=>b.count-a.count);
-
-  // Question effectiveness
-  const qEffArr=Object.entries(S.qStats).map(([attr,d])=>({
-    attr,
-    asked:d.asked,
-    avgDelta:d.asked?(d.totalDelta/d.asked).toFixed(2):'0',
-    total:d.correct+d.wrong>0?((d.correct/(d.correct+d.wrong))*100).toFixed(0):'—',
-  })).sort((a,b)=>parseFloat(b.avgDelta)-parseFloat(a.avgDelta));
-
-  // Continent breakdown
-  const contArr=Object.entries(S.continentStats).map(([cont,d])=>{
-    const meta=CONTINENT_META[cont]||{label:cont,emoji:'🌐'};
-    const cAcc=d.total?(d.correct/d.total*100).toFixed(1):'0.0';
-    const cAvgQ=d.total?(d.totalQ/d.total).toFixed(1):'—';
-    return{cont,meta,cAcc,cAvgQ,...d};
-  }).sort((a,b)=>parseFloat(b.cAcc)-parseFloat(a.cAcc));
-
-  const L=[];
-
-  L.push('# 🌍 GeoAI Bot Test — Analytical Report');
-  L.push('');
-  L.push(`> **Generated:** ${now.toUTCString()}`);
-  L.push(`> **Run Duration:** ${elapsed}`);
-  L.push(`> **Bot Version:** v2.0 (Full Parallel Mode)`);
-  L.push(`> **Concurrency:** ${S.cfg.concurrency} parallel games`);
-  L.push('');
-  L.push('---');
-  L.push('');
-
-  /* ── SECTION 1: Executive Summary ── */
-  L.push('## 📊 Section 1: Executive Summary');
-  L.push('');
-  L.push('| Metric | Value | Notes |');
-  L.push('|--------|-------|-------|');
-  L.push(`| **Overall Accuracy** | **${acc}%** | Target: ≥95% |`);
-  L.push(`| Countries Tested | ${ran.length} / ${countries.length} | ${countries.length-ran.length} skipped/error |`);
-  L.push(`| Correct Guesses | ✅ ${correct} | |`);
-  L.push(`| Wrong Guesses | ❌ ${wrong} | |`);
-  L.push(`| Avg Questions/Country | ${avgQ} | Lower = smarter |`);
-  L.push(`| Total Questions Asked | ${totalQ} | |`);
-  L.push(`| Run Duration | ${elapsed} | |`);
-  L.push(`| Accuracy Status | ${parseFloat(acc)>=95?'✅ TARGET MET':parseFloat(acc)>=85?'⚠️ BELOW TARGET':'❌ NEEDS WORK'} | |`);
-  L.push('');
-
-  /* ── SECTION 2: Continent Breakdown ── */
-  L.push('---');
-  L.push('');
-  L.push('## 🌍 Section 2: Performance by Continent');
-  L.push('');
-  L.push('| Continent | Total | Correct | Wrong | Accuracy | Avg Questions | Fastest | Slowest |');
-  L.push('|-----------|-------|---------|-------|----------|---------------|---------|---------|');
-  contArr.forEach(({meta,total,correct:c,wrong:w,cAcc,cAvgQ,fastest:f,slowest:sl})=>{
-    const bar=Math.round(parseFloat(cAcc)/10);
-    const vis='█'.repeat(bar)+'░'.repeat(10-bar);
-    L.push(`| ${meta.emoji} **${meta.label}** | ${total} | ${c} | ${w} | **${cAcc}%** \`${vis}\` | ${cAvgQ}q | ${f?f.name+' ('+f.q+'q)':'—'} | ${sl?sl.name+' ('+sl.q+'q)':'—'} |`);
-  });
-  L.push('');
-  L.push('### 🔍 Continent Analysis Notes');
-  L.push('');
-  contArr.forEach(({meta,cAcc,total,wrong:w})=>{
-    const pct=parseFloat(cAcc);
-    if(pct<80) L.push(`- ⚠️ **${meta.label}** is underperforming at ${cAcc}% (${w} wrong). Consider adding more discriminative questions for this region.`);
-    else if(pct>=95) L.push(`- ✅ **${meta.label}** is excellent at ${cAcc}% accuracy.`);
-  });
-  L.push('');
-
-  /* ── SECTION 3: Speed Analysis ── */
-  L.push('---');
-  L.push('');
-  L.push('## ⚡ Section 3: Speed Analysis (Questions Asked)');
-  L.push('');
-  L.push('### 🏆 Fastest Correct Guesses (Fewest Questions)');
-  L.push('');
-  L.push('| Rank | Country | Questions | Confidence | Continent |');
-  L.push('|------|---------|-----------|------------|-----------|');
-  [...ran].filter(r=>r.guessed).sort((a,b)=>a.questionsAsked-b.questionsAsked).slice(0,10).forEach((r,i)=>{
-    const c=countries.find(x=>x.name===Object.keys(S.results).find(n=>S.results[n]===r));
-    const cont=c?.continent||'—';
-    L.push(`| ${i+1} | ${c?.emoji||''} ${Object.keys(S.results).find(n=>S.results[n]===r)||'?'} | **${r.questionsAsked}** | ${r.confidence}% | ${cont} |`);
-  });
-  L.push('');
-  L.push('### 🐢 Slowest Correct Guesses (Most Questions)');
-  L.push('');
-  L.push('| Rank | Country | Questions | Confidence | Continent |');
-  L.push('|------|---------|-----------|------------|-----------|');
-  [...ran].filter(r=>r.guessed).sort((a,b)=>b.questionsAsked-a.questionsAsked).slice(0,10).forEach((r,i)=>{
-    const name=Object.keys(S.results).find(n=>S.results[n]===r)||'?';
-    const c=countries.find(x=>x.name===name);
-    L.push(`| ${i+1} | ${c?.emoji||''} ${name} | **${r.questionsAsked}** | ${r.confidence}% | ${c?.continent||'—'} |`);
-  });
-  L.push('');
-
-  /* ── SECTION 4: Wrong Answers ── */
-  L.push('---');
-  L.push('');
-  L.push('## ❌ Section 4: Failed Cases — Complete Wrong List');
-  L.push('');
-  if(wrongList.length===0){
-    L.push('> 🎉 **Perfect score!** No wrong answers.');
-  } else {
-    L.push(`> ${wrongList.length} countries guessed incorrectly. Analyze these to improve the dataset or algorithm.`);
-    L.push('');
-    L.push('| # | Country | AI Guessed | Questions | Confidence | Debug |');
-    L.push('|---|---------|------------|-----------|------------|-------|');
-    wrongList.forEach((r,i)=>{
-      const name=Object.keys(S.results).find(n=>S.results[n]===r)||'?';
-      const c=countries.find(x=>x.name===name);
-      L.push(`| ${i+1} | ${c?.emoji||''} **${name}** | ${r.prediction||'—'} | ${r.questionsAsked}q | ${r.confidence}% | [Debug](Countries/${name}.md) |`);
-    });
-  }
-  L.push('');
-
-  /* ── SECTION 5: Confusion Matrix ── */
-  L.push('---');
-  L.push('');
-  L.push('## 🔀 Section 5: Confusion Analysis');
-  L.push('');
-  if(confPairs.length===0){
-    L.push('> No confusion data (perfect accuracy or run not complete).');
-  } else {
-    L.push('Pairs that were confused. Fix: add distinguishing questions or improve data quality for these countries.');
-    L.push('');
-    L.push('| # | Actual Country | Guessed As | Times | Action Needed |');
-    L.push('|---|---------------|------------|-------|---------------|');
-    confPairs.slice(0,20).forEach((p,i)=>{
-      const ca=countries.find(c=>c.name===p.actual);
-      const cg=countries.find(c=>c.name===p.guessed);
-      const sameCont=ca?.continent===cg?.continent;
-      const sameRegion=ca?.region===cg?.region;
-      const hint=sameRegion?'Same region — add sub-region/language questions':sameCont?'Same continent — add regional questions':'Different continents — check data';
-      L.push(`| ${i+1} | ${ca?.emoji||''} **${p.actual}** | ${cg?.emoji||''} ${p.guessed} | ${p.count}x | ${hint} |`);
-    });
-    L.push('');
-    L.push('### Most Confused Countries (detailed)');
-    L.push('');
-    Object.entries(S.confusion).filter(([,g])=>Object.keys(g).length>0).slice(0,10).forEach(([actual,guesses])=>{
-      const ca=countries.find(c=>c.name===actual);
-      L.push(`**${ca?.emoji||''} ${actual}** was confused with:`);
-      Object.entries(guesses).sort((a,b)=>b[1]-a[1]).forEach(([g,n])=>{
-        const cg=countries.find(c=>c.name===g);
-        L.push(`- ${cg?.emoji||''} ${g} (${n}x)`);
-      });
-      L.push('');
-    });
-  }
-
-  /* ── SECTION 6: Question Effectiveness ── */
-  L.push('---');
-  L.push('');
-  L.push('## 📈 Section 6: Question Attribute Effectiveness');
-  L.push('');
-  L.push('> **Avg Confidence Delta** = average confidence change per question of this attribute. Higher = more effective.');
-  L.push('> **Game Win Rate** = how often games were won when this attribute was asked.');
-  L.push('');
-  L.push('| Rank | Attribute | Times Asked | Avg Conf Δ | Win Rate When Asked | Verdict |');
-  L.push('|------|-----------|-------------|-----------|---------------------|---------|');
-  qEffArr.forEach((q,i)=>{
-    const delta=parseFloat(q.avgDelta);
-    const verdict=delta>5?'🔥 Highly Effective':delta>2?'✅ Effective':delta>0?'🟡 Moderate':'🔴 Weak — Review';
-    L.push(`| ${i+1} | \`${q.attr}\` | ${q.asked} | **${q.avgDelta>0?'+':''}${q.avgDelta}%** | ${q.total}% | ${verdict} |`);
-  });
-  L.push('');
-  L.push('### 💡 Recommendations based on Effectiveness');
-  L.push('');
-  const weakAttrs=qEffArr.filter(q=>parseFloat(q.avgDelta)<=0);
-  const strongAttrs=qEffArr.filter(q=>parseFloat(q.avgDelta)>5);
-  if(strongAttrs.length>0){
-    L.push(`**Increase weight for:** ${strongAttrs.map(q=>`\`${q.attr}\``).join(', ')}`);
-    L.push('');
-  }
-  if(weakAttrs.length>0){
-    L.push(`**Decrease weight / Review questions for:** ${weakAttrs.map(q=>`\`${q.attr}\``).join(', ')}`);
-    L.push('');
-  }
-
-  /* ── SECTION 7: Algorithm Tuning Suggestions ── */
-  L.push('---');
-  L.push('');
-  L.push('## 🔧 Section 7: Algorithm Tuning Suggestions');
-  L.push('');
-  const overallAcc=parseFloat(acc);
-  L.push(`### Current State: ${overallAcc>=95?'✅ Excellent':'⚠️ Needs Improvement'}`);
-  L.push('');
-  L.push('Based on this run, here are actionable improvements:');
-  L.push('');
-  if(overallAcc<95){
-    L.push(`1. **Accuracy Gap:** ${(95-overallAcc).toFixed(2)}% below 95% target. ${wrongList.length} countries need fixing.`);
-  }
-  if(confPairs.length>0){
-    const topConf=confPairs[0];
-    L.push(`2. **Top Confusion Pair:** "${topConf.actual}" ↔ "${topConf.guessed}" — Add a question that discriminates these.`);
-  }
-  const slowContinent=contArr.sort((a,b)=>parseFloat(a.cAcc)-parseFloat(b.cAcc))[0];
-  if(slowContinent){
-    L.push(`3. **Weakest Continent:** ${slowContinent.meta.emoji} ${slowContinent.meta.label} (${slowContinent.cAcc}%) — Focus question expansion here.`);
-  }
-  const bestAttr=qEffArr[0];
-  if(bestAttr) L.push(`4. **Best Attribute:** \`${bestAttr.attr}\` (avg Δ=${bestAttr.avgDelta}%) — Ensure this is asked early (Stage 0-1).`);
-  const worstAttr=qEffArr[qEffArr.length-1];
-  if(worstAttr && parseFloat(worstAttr.avgDelta)<=0) L.push(`5. **Weakest Attribute:** \`${worstAttr.attr}\` (avg Δ=${worstAttr.avgDelta}%) — Consider removing or replacing these questions.`);
-  const highQCountries=[...ran].filter(r=>r.questionsAsked>20);
-  if(highQCountries.length>0) L.push(`6. **Slow Countries (>20 questions):** ${highQCountries.length} countries took too long — check if they have unique attributes missing from the question bank.`);
-  L.push('');
-
-  /* ── SECTION 8: Country Index ── */
-  L.push('---');
-  L.push('');
-  L.push('## 📁 Section 8: Full Country Index');
-  L.push('');
-  L.push('| Country | Result | Questions | Confidence | Prediction | Debug |');
-  L.push('|---------|--------|-----------|------------|------------|-------|');
-  const sorted=[...ran].sort((a,b)=>{
-    const na=Object.keys(S.results).find(n=>S.results[n]===a)||'';
-    const nb=Object.keys(S.results).find(n=>S.results[n]===b)||'';
-    return na.localeCompare(nb);
-  });
-  sorted.forEach(r=>{
-    const name=Object.keys(S.results).find(n=>S.results[n]===r)||'?';
-    const c=countries.find(x=>x.name===name);
-    const res=r.guessed?'✅ Correct':'❌ Wrong';
-    L.push(`| ${c?.emoji||''} ${name} | ${res} | ${r.questionsAsked}q | ${r.confidence}% | ${r.prediction||'—'} | [Debug](Countries/${name}.md) |`);
-  });
-  L.push('');
-
-  /* ── SECTION 9: Data Quality Flags ── */
-  L.push('---');
-  L.push('');
-  L.push('## 🏴 Section 9: Data Quality Flags');
-  L.push('');
-  L.push('Countries that may need data enrichment (took >20 questions AND wrong):');
-  L.push('');
-  const poorData=wrongList.filter(r=>r.questionsAsked>20);
-  if(poorData.length===0){
-    L.push('> No data quality flags. All slow countries were guessed correctly.');
-  } else {
-    L.push('| Country | Questions | Issue |');
-    L.push('|---------|-----------|-------|');
-    poorData.forEach(r=>{
-      const name=Object.keys(S.results).find(n=>S.results[n]===r)||'?';
-      const c=countries.find(x=>x.name===name);
-      L.push(`| ${c?.emoji||''} **${name}** | ${r.questionsAsked}q | Missing unique attributes or ambiguous data |`);
-    });
-  }
-  L.push('');
-
-  /* ── FOOTER ── */
-  L.push('---');
-  L.push('');
-  L.push('*Generated by GeoAI Bot Runner v2.0 — Full Parallel Mode*');
-  L.push(`*${now.toUTCString()}*`);
-  L.push('');
-
-  return L.join('\n');
+/* ═══════════════════════════════════════════════════════════════════════════
+   UI UTILITIES
+═══════════════════════════════════════════════════════════════════════════ */
+function log(msg, type = '') {
+    const box = document.getElementById('logBox');
+    const p = document.createElement('p');
+    const ts = new Date().toTimeString().slice(0,8);
+    p.className = type ? `log-${type}` : '';
+    p.innerHTML = `<span class="log-ts">[${ts}]</span> ${escHtml(msg)}`;
+    box.appendChild(p);
+    box.scrollTop = box.scrollHeight;
+}
+function clearLog() {
+    document.getElementById('logBox').innerHTML = '';
+    log('Log cleared.', 'info');
+}
+function toast(msg, type = '') {
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+}
+function escHtml(str) {
+    return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-/* ════════════════════════════════════════════════════════
-   LOG / TOAST / UTILS
-════════════════════════════════════════════════════════ */
-function log(msg,type=''){
-  const box=document.getElementById('logBox');
-  const ts=new Date().toTimeString().slice(0,8);
-  const p=document.createElement('div');
-  p.className='log-line';
-  p.innerHTML=`<span class="log-ts">[${ts}]</span><span class="${type?'log-'+type:''}">${esc(msg)}</span>`;
-  box.appendChild(p);
-  box.scrollTop=box.scrollHeight;
-}
-function clearLog(){document.getElementById('logBox').innerHTML='';log('Log cleared.','info');}
-function toast(msg,type=''){
-  const c=document.getElementById('toasts');
-  const t=document.createElement('div');
-  t.className='toast '+(type||'');
-  t.textContent=msg;
-  c.appendChild(t);
-  setTimeout(()=>t.remove(),4000);
-}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-/* ════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
    INIT
-════════════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded',()=>{
-  S.cfg.concurrency=20;
-  document.getElementById('concVal').textContent='20';
-  refreshPills();
-  log('GeoAI Bot Runner v2.0 ready.','info');
-  log('questions.json auto-parsed: uses the "country" array key.','info');
-  log('Default concurrency: 20 (safe for gunicorn 2-worker setup).','info');
-  log('⚠️  If you see HTTP 500 — lower concurrency in Config (try 5 or 10).','warn');
-  log('Click Config → set Backend URL → Run All Countries.','info');
+═══════════════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+    updateConfigPills();
+    log('Bot Runner v1.1.1 ready.', 'info');
+    log('Click Config (top right) to set Backend URL and GitHub Token.', 'info');
 });
 </script>
 </body>
