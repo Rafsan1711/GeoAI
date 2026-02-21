@@ -17,19 +17,31 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check if any file was added or deleted
+        id: check
+        run: |
+          # Last commit e kono file add (A) ba delete (D) hoyeche kina check koro
+          CHANGED=$(git diff --name-status HEAD~1 HEAD | awk '$1 == "A" || $1 == "D"' | wc -l)
+
+          if [ "$CHANGED" -gt 0 ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "File add/delete detected ($CHANGED file(s)). Proceeding..."
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No file add/delete found. Skipping."
+          fi
+
       - name: Generate directory tree
         id: tree
+        if: steps.check.outputs.has_changes == 'true'
         run: |
-          # tree command install
           sudo apt-get install -y tree
 
-          # .git, node_modules, __pycache__ etc. ignore kore tree generate koro
           TREE_OUTPUT=$(tree -a \
             --noreport \
             -I '.git|node_modules|__pycache__|*.pyc|.DS_Store|*.egg-info|.env|venv|.venv' \
             .)
 
-          # Multiline output safe bhabe pass koro
           {
             echo "tree<<EOF"
             echo "$TREE_OUTPUT"
@@ -37,18 +49,16 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Update README.md project structure
+        if: steps.check.outputs.has_changes == 'true'
         run: |
           python3 << 'PYEOF'
-          import re
+          import re, os
 
           with open("README.md", "r", encoding="utf-8") as f:
               content = f.read()
 
-          # GitHub Actions output theke tree nao
-          import os
           tree_output = os.environ["TREE_OUTPUT"]
 
-          # ## Repository Structure theke পরের ## heading এর আগে পর্যন্ত replace
           new_block = f"## Repository Structure\n\n```\n{tree_output}\n```\n"
 
           pattern = r"## Repository Structure\s*\n[\s\S]*?(?=\n## |\Z)"
@@ -67,6 +77,7 @@ jobs:
           TREE_OUTPUT: ${{ steps.tree.outputs.tree }}
 
       - name: Commit and push if changed
+        if: steps.check.outputs.has_changes == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
