@@ -1,0 +1,757 @@
+/* ===================================
+   RESPONSIVE DESIGN - FIXED
+   =================================== */
+
+/* Large Desktops (1440px and up) */
+@media (min-width: 1440px) {
+    :root {
+        --font-6xl: 4.5rem;
+        --font-5xl: 3.5rem;
+        --font-4xl: 2.75rem;
+    }
+    
+    .container {
+        padding: var(--space-3xl);
+    }
+}
+
+/* Desktop (1024px - 1439px) */
+@media (max-width: 1439px) {
+    .feature-showcase {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    
+    .category-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+}
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) {
+    :root {
+        --font-6xl: 3rem;
+        --font-5xl: 2.5rem;
+        --font-4xl: 2rem;
+        --font-3xl: 1.75rem;
+    }
+    
+    .container {
+        padding: var(--space-lg);
+        padding-bottom: 100px;
+    }
+    
+    /* Welcome Screen */
+    .brand-title {
+        font-size: var(--font-5xl);
+    }
+    
+    .brand-tagline {
+        font-size: var(--font-lg);
+    }
+    
+    .feature-showcase {
+        grid-template-columns: 1fr;
+        gap: var(--space-lg);
+    }
+    
+    .logo-circle {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .logo-icon {
+        font-size: 3.5rem;
+    }
+    
+    /* Category Screen */
+    .category-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-lg);
+    }
+    
+    .category-icon-box {
+        width: 90px;
+        height: 90px;
+    }
+    
+    .category-emoji {
+        font-size: 2.5rem;
+    }
+    
+    /* Question Screen */
+    .question-header {
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+        margin-bottom: var(--space-lg);
+    }
+    
+    .progress-container {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+    }
+    
+    .progress-bar {
+        flex: 1;
+        height: 6px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: var(--gradient-primary);
+        border-radius: var(--radius-full);
+    }
+    
+    .progress-text {
+        font-size: var(--font-xs);
+        color: var(--text-tertiary);
+        white-space: nowrap;
+    }
+    
+    .confidence-display {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-sm) var(--space-md);
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+    }
+    
+    .confidence-label {
+        font-size: var(--font-xs);
+        color: var(--text-tertiary);
+    }
+    
+    .confidence-value {
+        font-size: var(--font-lg);
+        font-weight: 700;
+        color: var(--color-primary-light);
+    }
+    
+    .ai-reaction {
+        margin-bottom: var(--space-md);
+    }
+    
+    .reaction-emoji {
+        font-size: 3rem;
+    }
+    
+    .reaction-text {
+        font-size: 0.75rem;
+    }
+    
+    .question-display {
+        margin-bottom: var(--space-lg);
+    }
+    
+    .question-bubble {
+        padding: var(--space-lg);
+    }
+    
+    .question-text {
+        font-size: var(--font-base);
+    }
+    
+    .answers-grid {
+        gap: var(--space-xs);
+    }
+    
+    .answer-btn {
+        padding: var(--space-sm) var(--space-md);
+        gap: var(--space-sm);
+        min-height: 48px;
+        border-radius: var(--radius-md);
+    }
+    
+    .answer-icon-circle {
+        width: 32px;
+        height: 32px;
+        font-size: var(--font-base);
+    }
+    
+    .answer-label {
+        font-size: 0.8rem;
+    }
+    
+    /* Result Screen */
+    .result-stats-grid {
+        flex-direction: column;
+        gap: var(--space-lg);
+    }
+    
+    .stat-divider {
+        width: 100px;
+        height: 2px;
+    }
+    
+    .result-emoji-large {
+        font-size: 4rem;
+    }
+    
+    .result-place-name {
+        font-size: var(--font-3xl);
+    }
+    
+    .confidence-circle-wrapper {
+        width: 140px;
+        height: 140px;
+    }
+    
+    /* Engine Screen */
+    .engine-cards-grid {
+        gap: var(--space-lg);
+    }
+    
+    /* Footer - FIXED */
+    .app-footer {
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: var(--space-md);
+        gap: var(--space-md);
+    }
+    
+    .footer-info {
+        justify-content: center;
+        width: 100%;
+        order: 1;
+    }
+    
+    .footer-btn {
+        order: 2;
+    }
+}
+
+/* Mobile Large (640px - 767px) */
+@media (max-width: 767px) {
+    :root {
+        --font-6xl: 2.5rem;
+        --font-5xl: 2rem;
+        --font-4xl: 1.75rem;
+        --font-3xl: 1.5rem;
+        --font-2xl: 1.25rem;
+        --font-xl: 1.125rem;
+    }
+    
+    .container {
+        padding: var(--space-md);
+        padding-bottom: 120px;
+    }
+    
+    /* Welcome Screen */
+    .brand-title {
+        font-size: 3rem;
+    }
+    
+    .brand-stats {
+        flex-direction: column;
+        gap: var(--space-md);
+    }
+    
+    .stat-badge {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .feature-card {
+        padding: var(--space-xl);
+    }
+    
+    .feature-icon-wrapper {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .feature-icon {
+        font-size: 2rem;
+    }
+    
+    /* Buttons */
+    .btn-hero {
+        padding: 1rem 2rem;
+        font-size: var(--font-lg);
+    }
+    
+    .btn-large {
+        padding: var(--space-md) var(--space-xl);
+        font-size: var(--font-base);
+    }
+    
+    /* Category Screen */
+    .screen-title {
+        font-size: var(--font-3xl);
+    }
+    
+    .screen-subtitle {
+        font-size: var(--font-base);
+    }
+    
+    .category-card {
+        padding: var(--space-xl);
+    }
+    
+    .category-name {
+        font-size: var(--font-xl);
+    }
+    
+    /* Thinking Screen */
+    .mind-reader-animation {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .brain-core {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .brain-icon {
+        font-size: 2.5rem;
+    }
+    
+    .thinking-title {
+        font-size: var(--font-2xl);
+    }
+    
+    .thinking-subtitle {
+        font-size: var(--font-base);
+    }
+    
+    .thinking-tips {
+        flex-direction: column;
+        gap: var(--space-sm);
+    }
+    
+    .tip-item {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Question Screen */
+    .progress-section,
+    .confidence-section {
+        padding: var(--space-md);
+    }
+    
+    .ai-reaction {
+        margin-bottom: var(--space-sm);
+    }
+    
+    .reaction-emoji {
+        font-size: 2.5rem;
+    }
+    
+    .reaction-text {
+        font-size: 0.7rem;
+        margin-top: 0;
+    }
+    
+    .question-header {
+        margin-bottom: var(--space-md);
+    }
+    
+    .avatar-container {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .avatar-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 2rem;
+    }
+    
+    .question-bubble {
+        padding: var(--space-md);
+    }
+    
+    .question-text {
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    
+    .answers-grid {
+        gap: 6px;
+    }
+    
+    .answer-btn {
+        font-size: 0.85rem;
+        padding: var(--space-sm);
+        gap: var(--space-sm);
+        min-height: 44px;
+    }
+    
+    .answer-icon-circle {
+        width: 30px;
+        height: 30px;
+        font-size: var(--font-sm);
+    }
+    
+    .answer-label {
+        font-size: 0.75rem;
+    }
+    
+    .answer-hotkey {
+        display: none;
+    }
+    
+    /* Result Screen */
+    .result-celebration {
+        height: 150px;
+    }
+    
+    .celebration-burst,
+    .celebration-ring {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .result-announcement {
+        font-size: var(--font-2xl);
+    }
+    
+    .result-place-card {
+        padding: var(--space-2xl);
+    }
+    
+    .result-emoji-large {
+        font-size: 3rem;
+    }
+    
+    .result-place-name {
+        font-size: var(--font-2xl);
+    }
+    
+    .confidence-circle-wrapper {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .confidence-number {
+        font-size: var(--font-4xl);
+    }
+    
+    .confidence-symbol {
+        font-size: var(--font-xl);
+    }
+    
+    .stat-box {
+        padding: var(--space-lg);
+    }
+    
+    .stat-value {
+        font-size: var(--font-3xl);
+    }
+    
+    .result-actions {
+        gap: var(--space-sm);
+    }
+    
+    /* Engine Screen */
+    .engine-card {
+        padding: var(--space-lg);
+    }
+    
+    .engine-card-title {
+        font-size: var(--font-lg);
+    }
+    
+    .weight-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-sm);
+    }
+    
+    .weight-label {
+        min-width: auto;
+    }
+    
+    /* Footer - MOBILE FIX */
+    .app-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: var(--space-sm) var(--space-md);
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-sm);
+        z-index: 1000;
+    }
+    
+    .footer-btn {
+        width: 100%;
+        max-width: 300px;
+        justify-content: center;
+        padding: var(--space-md);
+        font-size: var(--font-sm);
+    }
+    
+    .footer-info {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .footer-badge {
+        font-size: 0.7rem;
+        padding: var(--space-xs) var(--space-sm);
+    }
+}
+
+/* Mobile Small (below 640px) */
+@media (max-width: 639px) {
+    :root {
+        --space-3xl: 2.5rem;
+        --space-2xl: 2rem;
+        --space-xl: 1.25rem;
+    }
+    
+    .container {
+        padding: var(--space-sm);
+        padding-bottom: 140px;
+    }
+    
+    /* Welcome Screen */
+    .logo-circle {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .logo-icon {
+        font-size: 3rem;
+    }
+    
+    .brand-title {
+        font-size: 2.5rem;
+    }
+    
+    .brand-tagline {
+        font-size: var(--font-base);
+    }
+    
+    /* Category Screen */
+    .category-icon-box {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .category-emoji {
+        font-size: 2rem;
+    }
+    
+    /* Question Screen */
+    .question-wrapper {
+        max-width: 100%;
+    }
+    
+    .question-display {
+        gap: var(--space-md);
+    }
+    
+    .answers-grid {
+        gap: var(--space-sm);
+    }
+    
+    /* Result Screen */
+    .result-place-card {
+        padding: var(--space-lg);
+    }
+    
+    /* Footer */
+    .app-footer {
+        padding-bottom: calc(var(--space-sm) + env(safe-area-inset-bottom));
+    }
+}
+
+/* Mobile Extra Small (below 375px) */
+@media (max-width: 374px) {
+    :root {
+        --font-base: 0.875rem;
+        --font-sm: 0.8rem;
+        --font-xs: 0.7rem;
+    }
+    
+    .brand-title {
+        font-size: 2rem;
+    }
+    
+    .btn-hero {
+        padding: 0.875rem 1.5rem;
+        font-size: var(--font-base);
+    }
+    
+    .category-name {
+        font-size: var(--font-lg);
+    }
+    
+    .question-text {
+        font-size: var(--font-sm);
+    }
+    
+    .answer-btn {
+        padding: var(--space-sm);
+        font-size: var(--font-sm);
+    }
+    
+    .result-place-name {
+        font-size: var(--font-xl);
+    }
+    
+    .container {
+        padding-bottom: 160px;
+    }
+}
+
+/* ===================================
+   LANDSCAPE MOBILE
+   =================================== */
+
+@media (max-height: 600px) and (orientation: landscape) {
+    .container {
+        padding: var(--space-sm);
+        padding-bottom: 80px;
+    }
+    
+    .screen-header {
+        margin-bottom: var(--space-xl);
+    }
+    
+    .thinking-wrapper {
+        padding: var(--space-lg) 0;
+    }
+    
+    .mind-reader-animation {
+        width: 120px;
+        height: 120px;
+        margin-bottom: var(--space-xl);
+    }
+    
+    .thinking-title,
+    .thinking-subtitle {
+        margin-bottom: var(--space-sm);
+    }
+    
+    .thinking-tips {
+        display: none;
+    }
+    
+    .result-celebration {
+        height: 100px;
+    }
+    
+    .app-footer {
+        position: fixed;
+        padding: var(--space-xs) var(--space-md);
+    }
+}
+
+/* ===================================
+   PRINT STYLES
+   =================================== */
+
+@media print {
+    .app-footer,
+    .btn,
+    .answer-btn {
+        display: none;
+    }
+    
+    .container {
+        padding: 0;
+    }
+    
+    .bg-effects {
+        display: none;
+    }
+    
+    * {
+        background: white !important;
+        color: black !important;
+    }
+}
+
+/* ===================================
+   REDUCED MOTION
+   =================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .logo-ring,
+    .gradient-orb,
+    .brain-wave {
+        animation: none !important;
+    }
+}
+
+/* ===================================
+   HIGH CONTRAST MODE
+   =================================== */
+
+@media (prefers-contrast: high) {
+    :root {
+        --border-color: rgba(255, 255, 255, 0.3);
+        --border-hover: rgba(255, 255, 255, 0.5);
+    }
+    
+    .btn-primary,
+    .category-card,
+    .answer-btn {
+        border: 2px solid white;
+    }
+}
+
+/* ===================================
+   DARK MODE (if system preference)
+   =================================== */
+
+@media (prefers-color-scheme: dark) {
+    /* Already dark by default, but can add overrides here */
+}
+
+/* ===================================
+   TOUCH DEVICE OPTIMIZATIONS
+   =================================== */
+
+@media (hover: none) and (pointer: coarse) {
+    .btn,
+    .answer-btn,
+    .category-card,
+    .feature-card {
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    .btn:hover,
+    .answer-btn:hover,
+    .category-card:hover,
+    .feature-card:hover {
+        transform: none;
+    }
+    
+    .btn:active,
+    .answer-btn:active {
+        transform: scale(0.95);
+    }
+    
+    .answer-hotkey {
+        display: none !important;
+    }
+    
+    /* Increase touch target sizes */
+    .answer-btn {
+        min-height: 56px;
+    }
+    
+    .footer-btn {
+        min-height: 48px;
+    }
+       }
