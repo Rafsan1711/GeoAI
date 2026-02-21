@@ -16,26 +16,71 @@ An Akinator-style AI that guesses countries through yes/no questions using a Bay
 ## Repository Structure
 
 ```
-geoai/
-├── backend/          # Flask API — synced to HuggingFace Docker Space
-│   ├── app.py
-│   ├── core/         # Inference engine, question selector, etc.
-│   ├── algorithms/   # Bayesian network, information gain
-│   ├── models/       # Game state, item model
-│   ├── services/     # Firebase service
-│   ├── utils/        # Data loader, logger
-│   ├── data/         # countries.json, questions.json
-│   ├── Dockerfile
-│   └── requirements.txt
-├── frontend/         # Vanilla HTML/CSS/JS
-├── Debug/            # Auto-generated bot test reports
-│   ├── Countries/    # Per-country debug Markdown files
-│   └── REPORT.md     # Summary report
-├── .github/workflows/
-│   ├── sync-backend.yml   # Push backend → HF Spaces on main push
-│   └── bot-test.yml       # Run bot tests when data files change
+.
+├── .env.example
+├── .github
+│   └── workflows
+│       ├── check-file-size.yml
+│       ├── sync-backend.yml
+│       └── update-readme-structure.yml
 ├── CHANGELOG.md
-└── LICENSE
+├── LICENSE
+├── README.md
+├── backend
+│   ├── Dockerfile
+│   ├── README.md
+│   ├── algorithms
+│   │   ├── __init__.py
+│   │   ├── bayesian_network.py
+│   │   ├── feature_importance.py
+│   │   └── information_gain.py
+│   ├── analytics
+│   │   └── performance_tracker.py
+│   ├── app.py
+│   ├── config.py
+│   ├── core
+│   │   ├── __init__.py
+│   │   ├── confidence_calculator.py
+│   │   ├── inference_engine.py
+│   │   ├── probability_manager.py
+│   │   └── question_selector.py
+│   ├── data
+│   │   ├── countries.json
+│   │   └── questions.json
+│   ├── models
+│   │   ├── __init__.py
+│   │   ├── game_state.py
+│   │   └── item_model.py
+│   ├── requirements.txt
+│   ├── services
+│   │   └── firebase_service.py
+│   ├── tests
+│   │   └── test_accuracy.py
+│   └── utils
+│       ├── __init__.py
+│       ├── data_loader.py
+│       └── logger.py
+└── frontend
+    ├── bot.html
+    ├── css
+    │   ├── animations.css
+    │   ├── base.css
+    │   ├── components.css
+    │   ├── feedback_ui.css
+    │   ├── responsive.css
+    │   └── screens.css
+    ├── data
+    │   ├── countries.json
+    │   └── questions.json
+    ├── index.html
+    └── js
+        ├── animations.js
+        ├── api.js
+        ├── config.js
+        ├── dataset.js
+        ├── debug.js
+        ├── game.js
+        └── main.js
 ```
 
 ## Setup
