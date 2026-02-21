@@ -1439,7 +1439,7 @@ async function startRun() {
     document.getElementById('pushBtn').disabled = true;
     document.getElementById('reportSection').style.display = 'none';
 
-    const BATCH_SIZE = 10; // 10 games parallel — safe for HF free tier
+    const BATCH_SIZE = 115; // 10 games parallel — safe for HF free tier
     const total = STATE.countries.length;
     log(`Starting run for ${total} countries in batches of ${BATCH_SIZE}...`, 'info');
 
