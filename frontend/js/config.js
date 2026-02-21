@@ -3,7 +3,7 @@
 const CONFIG = {
     // API Configuration
     API: {
-        BASE_URL: 'https://sliding-puzzle-with-solver-ida-1.onrender.com',
+        BASE_URL: 'https://rafs-an09002-geoai-backend.hf.space/',
         TIMEOUT: 10000,
         ENDPOINTS: { /* Defined in api_enhanced.js */ }
     },
