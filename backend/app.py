@@ -1,6 +1,5 @@
 """
-GeoAI Backend — Flask REST API (v1.3.0)
-Includes debug payload (top_countries) on every question/answer response.
+GeoAI Backend — Flask REST API
 """
 
 import os
@@ -28,20 +27,16 @@ inference_engine = InferenceEngine()
 # ── Utility ───────────────────────────────────────────────────────────────────
 
 def _get_game_state(session_id: str):
-    """Retrieve game state or return a JSON error tuple."""
     if not session_id:
         return None, jsonify({'error': 'session_id required'}), 400
-
     game_state = inference_engine.get_game_state(session_id)
     if not game_state:
         inference_engine.active_games.pop(session_id, None)
         return None, jsonify({'error': 'Invalid or expired session'}), 400
-
     return game_state, None, None
 
 
 def _top_countries(game_state, n: int = 10):
-    """Return top-N active items sorted by probability (for debug payload)."""
     active = game_state.get_active_items()
     ranked = sorted(active, key=lambda x: x.probability, reverse=True)
     return [
@@ -50,7 +45,30 @@ def _top_countries(game_state, n: int = 10):
     ]
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
+# ── Data endpoints (for frontend to load JSON) ────────────────────────────────
+
+@app.route('/api/data/countries', methods=['GET'])
+def get_countries():
+    data = data_loader.get_category_data('country')
+    return jsonify(data)
+
+@app.route('/api/data/cities', methods=['GET'])
+def get_cities():
+    data = data_loader.get_category_data('city')
+    return jsonify(data)
+
+@app.route('/api/data/places', methods=['GET'])
+def get_places():
+    data = data_loader.get_category_data('place')
+    return jsonify(data)
+
+@app.route('/api/data/questions', methods=['GET'])
+def get_questions():
+    data = data_loader.get_all_questions()
+    return jsonify(data)
+
+
+# ── Health ────────────────────────────────────────────────────────────────────
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -61,6 +79,8 @@ def health_check():
         'data_stats': data_loader.get_data_stats()
     })
 
+
+# ── Game endpoints ────────────────────────────────────────────────────────────
 
 @app.route('/api/start-game', methods=['POST'])
 def start_game():
@@ -82,11 +102,11 @@ def start_game():
         logger.info(f"Game started: {game_state.session_id} | {len(items)} items")
 
         return jsonify({
-            'session_id':         game_state.session_id,
-            'category':           category,
-            'total_items':        len(items),
+            'session_id':          game_state.session_id,
+            'category':            category,
+            'total_items':         len(items),
             'questions_available': len(questions),
-            'message':            'Game started successfully'
+            'message':             'Game started successfully'
         })
 
     except Exception as e:
@@ -115,7 +135,7 @@ def get_next_question():
             'questions_asked':    game_state.questions_asked,
             'active_items_count': len(active_items),
             'top_guess':          top_item.name if top_item else None,
-            'top_countries':      _top_countries(game_state),   # debug
+            'top_countries':      _top_countries(game_state),
         })
 
     except Exception as e:
@@ -138,8 +158,6 @@ def process_answer():
             return jsonify({'error': 'answer required'}), 400
 
         result = inference_engine.process_answer(game_state, answer)
-
-        # Append debug payload
         result['top_countries'] = _top_countries(game_state)
 
         return jsonify(result)
@@ -169,10 +187,6 @@ def get_prediction():
 
 @app.route('/api/feedback', methods=['POST'])
 def submit_feedback():
-    """
-    User corrects a wrong guess. AI boosts the actual answer's probability
-    and continues asking questions from where it left off.
-    """
     try:
         body               = request.json
         session_id         = body.get('session_id')
@@ -198,14 +212,12 @@ def submit_feedback():
                 failure_reason='user_correction',
                 actual_answer=actual_answer_name
             )
-
-            # Boost actual answer, penalise all others
             for item in game_state.items:
                 if item.id == actual_item.id:
-                    item.probability *= 20.0   # strong boost
+                    item.probability *= 20.0
                     item.eliminated   = False
                 else:
-                    item.probability *= 0.05   # strong penalty
+                    item.probability *= 0.05
 
             inference_engine.probability_manager.normalize_probabilities(game_state.items)
             inference_engine.probability_manager.soft_filter(game_state.items)
@@ -231,7 +243,7 @@ def get_stats():
             'local_session_stats': inference_engine.get_session_stats(),
             'data_stats':          data_loader.get_data_stats(),
             'config': {
-                'version':      DEPLOYMENT_CONFIG['version'],
+                'version':       DEPLOYMENT_CONFIG['version'],
                 'max_questions': DEPLOYMENT_CONFIG.get('max_questions', 'unlimited'),
             }
         })
