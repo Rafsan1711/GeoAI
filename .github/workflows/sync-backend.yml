@@ -11,23 +11,25 @@ jobs:
   sync-to-hf-space:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo (full history + LFS)
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
 
-      - name: Push backend/ as root to HF Space
+      - name: Push backend/ to HF Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          cd backend
+
+          git init
           git config user.email "ci-bot@geoai"
           git config user.name "GeoAI CI Bot"
 
-          git remote add hf-space https://Rafs-an09002:$HF_TOKEN@huggingface.co/spaces/Rafs-an09002/geoai-backend || true
+          git add -A
+          git commit -m "sync: $(date -u '+%Y-%m-%d %H:%M:%S UTC') - $GITHUB_SHA"
 
-          # Extract the backend/ subtree into a temporary branch
-          git subtree split --prefix=backend -b hf-deploy
-
-          # Force push that branch to HF Space main
-          git push hf-space hf-deploy:main --force
+          git push --force \
+            https://Rafs-an09002:$HF_TOKEN@huggingface.co/spaces/Rafs-an09002/geoai-backend \
+            HEAD:main
