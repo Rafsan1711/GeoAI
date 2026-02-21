@@ -1,0 +1,15 @@
+name: Check File Size (LFS Warning)
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  check-file-size:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check large files
+        uses: ActionsDesk/lfs-warning@v2.0
+        with:
+          filesizelimit: 10485760  # 10MB — HF Spaces limit without LFS

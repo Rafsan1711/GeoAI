@@ -5,6 +5,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v1.0.1] — CI/CD & Infrastructure
+
+### Added
+- **GitHub Actions: Sync Backend → HF Space** (`.github/workflows/sync-backend.yml`)  
+  Automatically pushes `backend/` folder as root to HuggingFace Docker Space on every `main` push that touches backend files.
+- **GitHub Actions: File Size Check** (`.github/workflows/check-file-size.yml`)  
+  Warns on PRs if any file exceeds 10MB (HF Spaces Git-LFS limit).
+- **Dockerfile** for HuggingFace Docker Space (`backend/Dockerfile`)  
+  Runs Flask app via gunicorn on port 7860 (HF Spaces standard port).
+- **Root `README.md`** — full project overview, setup guide, repo structure.
+- **`backend/README.md`** — API endpoint docs, environment variable reference.
+- **`frontend/README.md`** — frontend structure, config guide, debug system docs.
+- **`CHANGELOG.md`** — this file.
+- **`LICENSE`** — GNU General Public License v3.0.
+- **`Debug/Countries/`** folder placeholder for future bot test reports.
+
+### Changed
+- Backend deployment target changed from **Render.com** to **HuggingFace Docker Space**.
+- `backend/config.py` port default updated to `7860` for HF Spaces compatibility.
+
+### Removed
+- `Procfile` — Render.com specific, no longer needed.
+- `runtime.txt` — Render.com Python version pin, no longer needed.
+- `__init___1_.py`, `__init___2_.py`, `__init___3_.py` — prototype export artifacts.
+- `dataset.js` — unused prototype file.
+- `package.json` — no npm build pipeline exists.
+
+---
+
 ## [v1.0.0] — Initial Release
 
 ### Core Features
