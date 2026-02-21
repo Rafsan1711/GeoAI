@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+
+
+## [v1.1.2] — Project Structure
+
+ -  Set up a GitHub Actions workflow that updates the current project structure in the README.md file
+---
+
+
+
+
 ## [v1.1.1] — Bot Test Runner
 
 ### Added
