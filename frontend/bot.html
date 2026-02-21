@@ -273,12 +273,14 @@ pre.report-md{font-family:var(--mono);font-size:12px;line-height:1.8;color:var(-
   <div class="settings-row">
     <div class="concurrency-label"><i class="fa-solid fa-bolt" style="color:var(--amber);margin-right:6px"></i>Concurrency (parallel games)</div>
     <div class="concurrency-control">
-      <button onclick="adjConc(-1)">−</button>
-      <span class="concurrency-val" id="concVal">195</span>
-      <button onclick="adjConc(1)">+</button>
+      <button onclick="adjConc(-5)">−</button>
+      <span class="concurrency-val" id="concVal">20</span>
+      <button onclick="adjConc(5)">+</button>
     </div>
   </div>
-  <div class="settings-hint" style="margin-top:10px"><i class="fa-solid fa-circle-info"></i>18GB RAM + 2vCPU backend — 195 (all at once) is the default. Lower if you see 429 errors.</div>
+  <div class="settings-hint" style="margin-top:10px"><i class="fa-solid fa-circle-info"></i>
+    Gunicorn default: 2 workers × sync. Start with <b>10–20</b> to avoid 500 errors. If backend uses <code>--workers 4 --threads 4</code>, you can go up to 50–100.
+  </div>
   <div class="settings-actions">
     <button class="btn btn-ghost btn-sm" onclick="closeSettings()"><i class="fa-solid fa-xmark"></i>Cancel</button>
     <button class="btn btn-primary btn-sm" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i>Save & Close</button>
@@ -456,7 +458,13 @@ function saveSettings(){
 }
 function adjConc(d){
   const el=document.getElementById('concVal');
-  el.textContent=Math.max(1,Math.min(195,parseInt(el.textContent)+d));
+  el.textContent=Math.max(1,Math.min(195,parseInt(el.textContent||'20')+d));
+}
+
+function detectConcurrency(){
+  // Try to auto-detect from /health endpoint worker info
+  // For now set sensible default
+  document.getElementById('concVal').textContent='20';
 }
 
 function refreshPills(){
@@ -644,7 +652,12 @@ async function startRun(){
       fetch('data/countries.json').then(r=>r.json()),
       fetch('data/questions.json').then(r=>r.json()),
     ]);
-    S.countries=cj; S.questions=qj;
+    S.countries=cj;
+    // questions.json is { country: [...], city: [...], place: [...] }
+    // Backend expects a flat array — extract the "country" key
+    S.questions=Array.isArray(qj) ? qj : (qj.country || Object.values(qj)[0] || []);
+    if(!S.questions.length){toast('No country questions found in questions.json','err');return;}
+    log(`Loaded ${S.countries.length} countries, ${S.questions.length} questions`,'ok');
   } catch(e){toast('Failed to load data files','err');log('Data load error: '+e.message,'err');return;}
 
   // Reset
@@ -1356,11 +1369,14 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
    INIT
 ════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded',()=>{
+  S.cfg.concurrency=20;
+  document.getElementById('concVal').textContent='20';
   refreshPills();
   log('GeoAI Bot Runner v2.0 ready.','info');
-  log('Full Parallel Mode: all countries run simultaneously.','info');
-  log('18GB RAM / 2vCPU backend — concurrency defaults to 195 (all at once).','info');
-  log('Click Config to set Backend URL and GitHub Token.','info');
+  log('questions.json auto-parsed: uses the "country" array key.','info');
+  log('Default concurrency: 20 (safe for gunicorn 2-worker setup).','info');
+  log('⚠️  If you see HTTP 500 — lower concurrency in Config (try 5 or 10).','warn');
+  log('Click Config → set Backend URL → Run All Countries.','info');
 });
 </script>
 </body>
