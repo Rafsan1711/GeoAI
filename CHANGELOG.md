@@ -5,6 +5,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v1.1.1] — Bot Test Runner
+
+### Added
+- **`frontend/bot.html`** — Standalone Bot Test Runner page (accessible via `/bot`)
+  - Premium dark UI with animated gradient background, Font Awesome 6 icons (via cdnjs)
+  - **Config Panel** (slides down from top navbar): set Backend URL, GitHub Token, owner/repo/branch — stored in session memory only, never persisted
+  - **Navbar**: Home link, GitHub repo link, Config toggle button
+  - **Run All Countries** button: plays a complete simulated game for every country in `countries.json` sequentially
+  - **Bot Answer Logic**: answers questions based on actual country attributes (`yes`/`probably`/`dontknow`/`probablynot`/`no`) with smart fuzzy matching for population ranges
+  - **Continent Accordion**: countries grouped by continent with live progress bars, collapsible sections
+  - **Country Cards**: show emoji flag, name, region, live status (pending/running/correct/wrong) with animated icons
+  - **Country Detail Drawer** (slides up from bottom): click any country card to see its full debug Markdown report, result banner, and download button
+  - **Overall Progress Bar** with shimmer animation
+  - **Stats Bar**: total/completed/correct/wrong/accuracy — live-updating
+  - **REPORT.md generation**: summary Markdown with overall accuracy, per-continent breakdown, per-country links to debug files
+  - **Push to GitHub** via GitHub Contents API (no backend needed): pushes all `Debug/Countries/*.md` files and `Debug/REPORT.md` to the repo
+  - **Console Log** panel: timestamped log with color-coded levels (ok/error/info/warn) and clear button
+  - **Toast notifications** for all actions
+  - No Start button on page — accessible only via direct URL (`/bot`)
+
+### Changed
+- `CHANGELOG.md` updated with v1.1.1
+
+---
+
 ## [v1.0.1] — CI/CD & Infrastructure
 
 ### Added
