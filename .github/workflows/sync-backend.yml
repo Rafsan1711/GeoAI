@@ -21,12 +21,13 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # Configure git identity
           git config user.email "ci-bot@geoai"
           git config user.name "GeoAI CI Bot"
 
-          # Add HF Space as remote
           git remote add hf-space https://Rafs-an09002:$HF_TOKEN@huggingface.co/spaces/Rafs-an09002/geoai-backend || true
 
-          # Use git-subtree to push only the backend/ folder as the root of the Space
-          git subtree push --prefix=backend hf-space main
+          # Extract the backend/ subtree into a temporary branch
+          git subtree split --prefix=backend -b hf-deploy
+
+          # Force push that branch to HF Space main
+          git push hf-space hf-deploy:main --force
