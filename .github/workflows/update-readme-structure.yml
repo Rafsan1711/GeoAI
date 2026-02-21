@@ -1,0 +1,81 @@
+name: Update README Structure
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'  # Infinite loop avoid korte
+
+jobs:
+  update-structure:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate directory tree
+        id: tree
+        run: |
+          # tree command install
+          sudo apt-get install -y tree
+
+          # .git, node_modules, __pycache__ etc. ignore kore tree generate koro
+          TREE_OUTPUT=$(tree -a \
+            --noreport \
+            -I '.git|node_modules|__pycache__|*.pyc|.DS_Store|*.egg-info|.env|venv|.venv' \
+            .)
+
+          # Multiline output safe bhabe pass koro
+          {
+            echo "tree<<EOF"
+            echo "$TREE_OUTPUT"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Update README.md project structure
+        run: |
+          python3 << 'PYEOF'
+          import re
+
+          with open("README.md", "r", encoding="utf-8") as f:
+              content = f.read()
+
+          # GitHub Actions output theke tree nao
+          import os
+          tree_output = os.environ["TREE_OUTPUT"]
+
+          # ## Repository Structure theke পরের ## heading এর আগে পর্যন্ত replace
+          new_block = f"## Repository Structure\n\n```\n{tree_output}\n```\n"
+
+          pattern = r"## Repository Structure\s*\n[\s\S]*?(?=\n## |\Z)"
+          new_content, count = re.subn(pattern, new_block, content)
+
+          if count == 0:
+              print("WARNING: 'Repository Structure' section not found in README.md")
+              exit(1)
+
+          with open("README.md", "w", encoding="utf-8") as f:
+              f.write(new_content)
+
+          print("README.md updated successfully.")
+          PYEOF
+        env:
+          TREE_OUTPUT: ${{ steps.tree.outputs.tree }}
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add README.md
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "docs: auto-update project structure in README [skip ci]"
+            git push
+          fi
