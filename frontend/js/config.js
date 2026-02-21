@@ -3,7 +3,7 @@
 const CONFIG = {
     // API Configuration
     API: {
-        BASE_URL: 'https://rafs-an09002-geoai-backend.hf.space/',
+        BASE_URL: 'https://rafs-an09002-geoai-backend.hf.space',
         TIMEOUT: 10000,
         ENDPOINTS: { /* Defined in api_enhanced.js */ }
     },
