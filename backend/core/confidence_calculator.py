@@ -10,7 +10,7 @@ import math
 import logging
 from typing import List
 from models.item_model import Item
-from backend.config import GAME_CONFIG
+from config import GAME_CONFIG, ALGORITHM_PARAMS
 
 logger = logging.getLogger(__name__)
 
@@ -28,26 +28,15 @@ class ConfidenceCalculator:
         if not active_items:
             return 0.0
 
-        # ✅ FIX: If only 1 item left, it's 100% confident — guess immediately
         if len(active_items) == 1:
             return 100.0
 
-        # ✅ FIX: If only 2 items left and top has 80%+ of total probability, very high confidence
         if len(active_items) == 2:
             total = sum(i.probability for i in active_items)
             top = max(i.probability for i in active_items)
             if total > self.epsilon and (top / total) >= 0.80:
                 return 97.0
 
-        weights = GAME_CONFIG.get('confidence_weights', {
-            'probability_gap': 0.40,
-            'normalized_prob': 0.30,
-            'item_count':      0.20,
-            'entropy':         0.10
-        })
-
-        # Fallback to algorithm_params if needed
-        from backend.config import ALGORITHM_PARAMS
         w = ALGORITHM_PARAMS['confidence_weights']
 
         prob_gap_conf   = self._probability_gap_confidence(active_items)
@@ -65,12 +54,11 @@ class ConfidenceCalculator:
         return min(99.9, composite)
 
     def _probability_gap_confidence(self, items: List[Item]) -> float:
-        """Confidence based on gap between top-2 probabilities."""
         if len(items) < 2:
             return 99.0
 
         sorted_items = sorted(items, key=lambda x: x.probability, reverse=True)
-        top   = sorted_items[0].probability
+        top    = sorted_items[0].probability
         second = sorted_items[1].probability
 
         total = sum(i.probability for i in items)
@@ -78,10 +66,9 @@ class ConfidenceCalculator:
             return 50.0
 
         gap = (top - second) / total
-        return min(99.0, gap * 200.0)  # Aggressive scaling
+        return min(99.0, gap * 200.0)
 
     def _normalized_probability_confidence(self, items: List[Item]) -> float:
-        """Confidence based on top item's share of total probability."""
         if not items:
             return 0.0
 
@@ -95,7 +82,6 @@ class ConfidenceCalculator:
         return normalized * 100.0
 
     def _item_count_confidence(self, active_items: List[Item], total_items: int) -> float:
-        """Confidence based on how many items remain."""
         if total_items == 0:
             return 50.0
 
@@ -118,7 +104,6 @@ class ConfidenceCalculator:
         return min(99.0, confidence)
 
     def _entropy_confidence(self, items: List[Item]) -> float:
-        """Confidence from Shannon entropy."""
         if not items:
             return 0.0
 
@@ -141,27 +126,21 @@ class ConfidenceCalculator:
 
     def should_make_guess(self, confidence: float, questions_asked: int,
                           active_items_count: int = None) -> bool:
-        """
-        ✅ AKINATOR-STYLE: Guess as soon as confidence is high enough.
-        No hard question limit. Earlier = better.
-        """
         cfg = GAME_CONFIG
 
-        # ✅ Rule 1: If only 1 or 2 items remain → guess immediately (no matter what)
         if active_items_count is not None:
             if active_items_count <= cfg.get('force_guess_at_items', 2):
                 logger.info(f"Force guess: only {active_items_count} item(s) remain.")
                 return True
 
-        # ✅ Rule 2: Adaptive confidence thresholds by question stage
         if questions_asked <= 10:
-            threshold = cfg['confidence_threshold_stage_1']   # 99%
+            threshold = cfg['confidence_threshold_stage_1']
         elif questions_asked <= 25:
-            threshold = cfg['confidence_threshold_stage_2']   # 95%
+            threshold = cfg['confidence_threshold_stage_2']
         elif questions_asked <= 50:
-            threshold = cfg['confidence_threshold_stage_3']   # 85%
+            threshold = cfg['confidence_threshold_stage_3']
         else:
-            threshold = cfg['confidence_threshold_stage_4']   # 75%
+            threshold = cfg['confidence_threshold_stage_4']
 
         if confidence >= threshold:
             logger.info(
