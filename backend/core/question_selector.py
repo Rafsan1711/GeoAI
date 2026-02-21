@@ -21,7 +21,7 @@ from collections import defaultdict
 from models.item_model import Item
 from algorithms.information_gain import InformationGain
 from algorithms.bayesian_network import BayesianNetwork
-from backend.config import GAME_CONFIG
+from config import GAME_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -131,10 +131,6 @@ class QuestionSelector:
     # ── Active value set ──────────────────────────────────────────────────────
 
     def _build_active_val_set(self, active_items: List[Item]) -> Dict[str, Set[str]]:
-        """
-        For every attribute, collect the exact normalized values present
-        in at least one active item.  This is the grounding index.
-        """
         val_set: Dict[str, Set[str]] = defaultdict(set)
         for item in active_items:
             for attr, v in item.attributes.items():
@@ -194,36 +190,22 @@ class QuestionSelector:
             attr = q['attribute']
             val  = _norm(q.get('value', ''))
 
-            # 1. Never repeat
             if q['question'] in asked_texts:
                 continue
-
-            # 2. Boolean: ask once
             if attr in BOOL_ATTRS and attr in asked_bool:
                 continue
-
-            # 3. Exclusive: once confirmed, skip other values
             if attr in EXCLUSIVE_ATTRS and attr in confirmed:
                 continue
-
-            # 4. Skip denied values
             if val in denied.get(attr, set()):
                 continue
 
-            # 5. Repeat guard
             max_r = 8 if attr in ('famousFor', 'neighbors', 'flagColors', 'exports') else 2
             if asked_count.get(attr, 0) >= max_r:
                 continue
 
-            # ── CORE FIX ─────────────────────────────────────────────────────
-            # 6. Active-item grounding (exact normalized match):
-            #    The question value MUST exist in at least one active item.
-            #    Uses the same _norm() as Item.matches_question() → no mismatch.
             if val not in active_val_set.get(attr, set()):
                 continue
-            # ─────────────────────────────────────────────────────────────────
 
-            # 7. Non-trivial split (skip if all match or none match)
             yes_cnt = sum(
                 1 for item in active_items
                 if item.matches_question({'attribute': attr, 'value': q.get('value')})
@@ -241,33 +223,25 @@ class QuestionSelector:
         confirmed   = ctx['confirmed']
         asked_count = ctx['asked_count']
 
-        # Must confirm continent first
         if 'continent' not in confirmed:
             return 0
-
-        # Then subRegion (up to 3 attempts)
         if 'subRegion' not in confirmed and asked_count.get('subRegion', 0) < 3:
             return 1
 
-        # Then at least 2 geography attrs
         geo = {'landlocked', 'hasCoast', 'isIsland', 'hasMountains', 'climate'}
         if sum(1 for a in geo if a in confirmed or asked_count.get(a, 0) >= 1) < 2:
             return 2
 
-        # Then population
         if 'population' not in confirmed and asked_count.get('population', 0) < 1:
             return 3
 
-        # Then society (religion + one more)
         soc = {'mainReligion', 'government', 'driveSide'}
         if sum(1 for a in soc if a in confirmed or asked_count.get(a, 0) >= 1) < 2:
             return 4
 
-        # Then language
         if 'language' not in confirmed and asked_count.get('language', 0) < 1:
             return 5
 
-        # Specific identifiers
         return 6
 
     # ── Scoring ───────────────────────────────────────────────────────────────
@@ -283,14 +257,13 @@ class QuestionSelector:
 
         ig = self.info_gain_calc.calculate(active_items, attr, val)
 
-        # Stage bonus — strongly reward being exactly at the target stage
         diff = stage - target_stage
         if diff == 0:
             stage_bonus = 0.55
         elif diff == 1:
-            stage_bonus = 0.20   # one step ahead — acceptable
+            stage_bonus = 0.20
         elif diff == -1:
-            stage_bonus = 0.05   # already resolved — low bonus
+            stage_bonus = 0.05
         else:
             stage_bonus = max(0.0, 0.05 - abs(diff) * 0.02)
 
