@@ -5,7 +5,8 @@ on:
     branches:
       - main
     paths-ignore:
-      - 'README.md'  # Infinite loop avoid korte
+      - 'README.md'          # Infinite loop avoid korte
+      - 'Debug/Countries/**' # Bot test e 114+ file push hoy — workflow waste avoid korte
 
 jobs:
   update-structure:
@@ -21,6 +22,8 @@ jobs:
         id: check
         run: |
           # Strictly only A (added) or D (deleted) status check — M (modified) ignore
+          # Debug/Countries/** changes already blocked by paths-ignore above,
+          # so no need to filter them again here.
           CHANGED=$(git diff --name-status HEAD~1 HEAD | awk '$1 == "A" || $1 == "D"' | wc -l)
 
           if [ "$CHANGED" -gt 0 ]; then
@@ -36,10 +39,6 @@ jobs:
         if: steps.check.outputs.has_changes == 'true'
         run: |
           sudo apt-get install -y tree
-
-          # Debug/Countries folder er files collapse kore All-Countries-Debug.md show korbe
-          # Step 1: tree generate koro but Debug/Countries/* files gulo prune kore
-          # Step 2: Python script e manually oi folder er jaygay placeholder add korbo
 
           TREE_OUTPUT=$(tree -a \
             --noreport \
@@ -65,40 +64,28 @@ jobs:
 
           # ─── Collapse Debug/Countries/* entries ───────────────────────────────────
           # tree output e Debug/Countries/ er under e sob file/folder line gulo
-          # detect kore shegulor badle ekta single placeholder line debo.
+          # detect kore shegulor badle PREDEFINED placeholder line diye replace korbo.
           #
-          # tree output er line format (example):
-          #   │   ├── Countries
-          #   │   │   ├── Afghanistan.md
-          #   │   │   ├── Albania.md
-          #   │   │   └── Zimbabwe.md
+          # Ei placeholder HARDCODED — workflow kabhi change korbe na:
+          #   └── All-Countries-Debug.md  (115+ country files collapsed)
           #
-          # Strategy:
-          #   1. Lines split koro
-          #   2. "Countries" directory line ta khojo (tree prefix + "Countries")
-          #   3. Tar porer sob line — jar indent level Countries er child (deeper) —
-          #      sheguloke remove kore ekta placeholder line diye replace koro.
+          # Karon: Debug/Countries/ e file add/delete hole workflow-i run hoy na
+          # (paths-ignore diye block kora), tai ei placeholder sorboda same thakbe.
+          # ──────────────────────────────────────────────────────────────────────────
+
+          PLACEHOLDER = "All-Countries-Debug.md  (115+ country files collapsed)"
 
           lines = tree_output.splitlines()
           new_lines = []
-          skip_mode = False          # Countries er child lines skip korbo
-          countries_indent = None    # Countries line er base indent length
-          placeholder_added = False  # Placeholder ekbar-i add korbo
-          countries_line_idx = None
+          skip_mode         = False
+          countries_indent  = None
+          placeholder_added = False
 
-          # Ek line er "visual indent depth" ber korbo tree characters theke.
-          # tree e har line e prefix characters thake: spaces, │, ├──, └──
-          # Actual name shuru hoy last "── " ba "─ " er pore.
-          # Depth measure korar jonno prefix length use korbo.
           def get_prefix_len(line):
-              """Return the length of the tree-drawing prefix (before the actual name)."""
-              # tree prefix characters: space, │, ├, └, ─
               match = re.match(r'^([\s│├└─]*)', line)
               return len(match.group(1)) if match else 0
 
           def get_name(line):
-              """Extract the file/folder name from a tree line."""
-              # Remove tree drawing characters from start
               return re.sub(r'^[\s│├└─]+', '', line).strip()
 
           i = 0
@@ -108,27 +95,23 @@ jobs:
 
               if skip_mode:
                   current_indent = get_prefix_len(line)
-                  # Jodi current line er indent, Countries er indent theke beshi ba sama
-                  # (matlab still inside Countries), skip koro
-                  # Countries er child: indent > countries_indent
                   if current_indent > countries_indent:
+                      # Countries er child line — skip koro
                       if not placeholder_added:
-                          # Countries line er prefix style match kore placeholder banao
-                          # Placeholder: Countries er niche ekta entry, same depth e
-                          # Prefix: countries line er prefix e "├── " ba "└── " add
+                          # Predefined placeholder insert koro (ekbar-i)
                           indent_str = ' ' * (countries_indent + 4)
-                          new_lines.append(f"{indent_str}└── All-Countries-Debug.md  (115+ country files collapsed)")
+                          new_lines.append(f"{indent_str}└── {PLACEHOLDER}")
                           placeholder_added = True
                       i += 1
                       continue
                   else:
-                      # Countries er scope shesh, normal mode e phiro
-                      skip_mode = False
+                      # Countries scope shesh
+                      skip_mode        = False
                       countries_indent = None
 
-              if name == 'Countries' or name == 'Countries/':
-                  countries_indent = get_prefix_len(line)
-                  skip_mode = True
+              if name in ('Countries', 'Countries/'):
+                  countries_indent  = get_prefix_len(line)
+                  skip_mode         = True
                   placeholder_added = False
                   new_lines.append(line)
                   i += 1
@@ -136,6 +119,12 @@ jobs:
 
               new_lines.append(line)
               i += 1
+
+          # Edge case: Countries folder er vitore kono file nai (empty folder)
+          # tai skip_mode shesh-e placeholder add hoyni — add kore debo
+          if skip_mode and not placeholder_added and countries_indent is not None:
+              indent_str = ' ' * (countries_indent + 4)
+              new_lines.append(f"{indent_str}└── {PLACEHOLDER}")
 
           collapsed_tree = "\n".join(new_lines)
           # ──────────────────────────────────────────────────────────────────────────
@@ -152,7 +141,7 @@ jobs:
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_content)
 
-          print("README.md updated successfully with collapsed Countries folder.")
+          print("README.md updated successfully. Debug/Countries collapsed with predefined placeholder.")
           PYEOF
         env:
           TREE_OUTPUT: ${{ steps.tree.outputs.tree }}
