@@ -17,10 +17,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check if any file was added or deleted
+      - name: Check if any file was ONLY added or deleted (not modified)
         id: check
         run: |
-          # Last commit e kono file add (A) ba delete (D) hoyeche kina check koro
+          # Strictly only A (added) or D (deleted) status check — M (modified) ignore
           CHANGED=$(git diff --name-status HEAD~1 HEAD | awk '$1 == "A" || $1 == "D"' | wc -l)
 
           if [ "$CHANGED" -gt 0 ]; then
@@ -28,7 +28,7 @@ jobs:
             echo "File add/delete detected ($CHANGED file(s)). Proceeding..."
           else
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
-            echo "No file add/delete found. Skipping."
+            echo "No file add/delete found (only modifications or no changes). Skipping."
           fi
 
       - name: Generate directory tree
@@ -36,6 +36,10 @@ jobs:
         if: steps.check.outputs.has_changes == 'true'
         run: |
           sudo apt-get install -y tree
+
+          # Debug/Countries folder er files collapse kore All-Countries-Debug.md show korbe
+          # Step 1: tree generate koro but Debug/Countries/* files gulo prune kore
+          # Step 2: Python script e manually oi folder er jaygay placeholder add korbo
 
           TREE_OUTPUT=$(tree -a \
             --noreport \
@@ -48,7 +52,7 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Update README.md project structure
+      - name: Collapse Debug/Countries in tree output and update README.md
         if: steps.check.outputs.has_changes == 'true'
         run: |
           python3 << 'PYEOF'
@@ -59,19 +63,96 @@ jobs:
 
           tree_output = os.environ["TREE_OUTPUT"]
 
-          new_block = f"## Repository Structure\n\n```\n{tree_output}\n```\n"
+          # ─── Collapse Debug/Countries/* entries ───────────────────────────────────
+          # tree output e Debug/Countries/ er under e sob file/folder line gulo
+          # detect kore shegulor badle ekta single placeholder line debo.
+          #
+          # tree output er line format (example):
+          #   │   ├── Countries
+          #   │   │   ├── Afghanistan.md
+          #   │   │   ├── Albania.md
+          #   │   │   └── Zimbabwe.md
+          #
+          # Strategy:
+          #   1. Lines split koro
+          #   2. "Countries" directory line ta khojo (tree prefix + "Countries")
+          #   3. Tar porer sob line — jar indent level Countries er child (deeper) —
+          #      sheguloke remove kore ekta placeholder line diye replace koro.
+
+          lines = tree_output.splitlines()
+          new_lines = []
+          skip_mode = False          # Countries er child lines skip korbo
+          countries_indent = None    # Countries line er base indent length
+          placeholder_added = False  # Placeholder ekbar-i add korbo
+          countries_line_idx = None
+
+          # Ek line er "visual indent depth" ber korbo tree characters theke.
+          # tree e har line e prefix characters thake: spaces, │, ├──, └──
+          # Actual name shuru hoy last "── " ba "─ " er pore.
+          # Depth measure korar jonno prefix length use korbo.
+          def get_prefix_len(line):
+              """Return the length of the tree-drawing prefix (before the actual name)."""
+              # tree prefix characters: space, │, ├, └, ─
+              match = re.match(r'^([\s│├└─]*)', line)
+              return len(match.group(1)) if match else 0
+
+          def get_name(line):
+              """Extract the file/folder name from a tree line."""
+              # Remove tree drawing characters from start
+              return re.sub(r'^[\s│├└─]+', '', line).strip()
+
+          i = 0
+          while i < len(lines):
+              line = lines[i]
+              name = get_name(line)
+
+              if skip_mode:
+                  current_indent = get_prefix_len(line)
+                  # Jodi current line er indent, Countries er indent theke beshi ba sama
+                  # (matlab still inside Countries), skip koro
+                  # Countries er child: indent > countries_indent
+                  if current_indent > countries_indent:
+                      if not placeholder_added:
+                          # Countries line er prefix style match kore placeholder banao
+                          # Placeholder: Countries er niche ekta entry, same depth e
+                          # Prefix: countries line er prefix e "├── " ba "└── " add
+                          indent_str = ' ' * (countries_indent + 4)
+                          new_lines.append(f"{indent_str}└── All-Countries-Debug.md  (115+ country files collapsed)")
+                          placeholder_added = True
+                      i += 1
+                      continue
+                  else:
+                      # Countries er scope shesh, normal mode e phiro
+                      skip_mode = False
+                      countries_indent = None
+
+              if name == 'Countries' or name == 'Countries/':
+                  countries_indent = get_prefix_len(line)
+                  skip_mode = True
+                  placeholder_added = False
+                  new_lines.append(line)
+                  i += 1
+                  continue
+
+              new_lines.append(line)
+              i += 1
+
+          collapsed_tree = "\n".join(new_lines)
+          # ──────────────────────────────────────────────────────────────────────────
+
+          new_block = f"## Repository Structure\n\n```\n{collapsed_tree}\n```\n"
 
           pattern = r"## Repository Structure\s*\n[\s\S]*?(?=\n## |\Z)"
           new_content, count = re.subn(pattern, new_block, content)
 
           if count == 0:
-              print("WARNING: 'Repository Structure' section not found in README.md")
+              print("ERROR: 'Repository Structure' section not found in README.md")
               exit(1)
 
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_content)
 
-          print("README.md updated successfully.")
+          print("README.md updated successfully with collapsed Countries folder.")
           PYEOF
         env:
           TREE_OUTPUT: ${{ steps.tree.outputs.tree }}
