@@ -1,4 +1,4 @@
-# GeoAI Debug Report — 🇦🇫 Afghanistan 
+# GeoAI Debug Report — 🇦🇫 Afghanistan
 
 ## 📋 Summary
 
