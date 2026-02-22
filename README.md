@@ -24,6 +24,10 @@ An Akinator-style AI that guesses countries through yes/no questions using a Bay
 │       ├── sync-backend.yml
 │       └── update-readme-structure.yml
 ├── CHANGELOG.md
+├── Debug
+│   ├── Countries
+            └── All-Countries-Debug.md  (115+ country files collapsed)
+│   └── REPORT.md
 ├── LICENSE
 ├── README.md
 ├── backend
