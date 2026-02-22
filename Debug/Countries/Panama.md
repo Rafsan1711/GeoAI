@@ -1,0 +1,367 @@
+# GeoAI Debug Report — 🇵🇦 Panama
+
+## 📋 Summary
+
+| Field | Value |
+|-------|-------|
+| Country | 🇵🇦 **Panama** |
+| Continent | northamerica |
+| Region | central · central america |
+| Population | small |
+| Result | ✅ **CORRECT** |
+| AI Guessed | Panama |
+| Confidence | 95% |
+| Questions Asked | 11 |
+| Generated | 2026-02-22T05:39:57.750Z |
+
+---
+
+## 🔍 Question-by-Question Log
+
+### Q1: Is it located in Asia?
+
+- **Attribute:** `continent` = `asia`
+- **Answer:** ❌ No
+- **Confidence:** 0.3% → 5.194736859654262% 📈 (+4.9)
+- **Active Countries:** 115 → 76
+
+**Top before:**
+| Rank | Country | Prob |
+|------|---------|------|
+| 1 | Bangladesh | 0.87% |
+| 2 | India | 0.87% |
+| 3 | United States | 0.87% |
+| 4 | China | 0.87% |
+| 5 | Brazil | 0.87% |
+| 6 | Australia | 0.87% |
+| 7 | Russia | 0.87% |
+| 8 | Japan | 0.87% |
+| 9 | France | 0.87% |
+| 10 | Germany | 0.87% |
+
+**Top after:**
+| Rank | Country | Prob | Δ |
+|------|---------|------|---|
+| 1 | United States | 1.32% | +0.45%📈 |
+| 2 | Brazil | 1.32% | +0.45%📈 |
+| 3 | Australia | 1.32% | +0.45%📈 |
+| 4 | Russia | 1.32% | +0.45%📈 |
+| 5 | France | 1.32% | +0.45%📈 |
+| 6 | Germany | 1.32% | +0.45%📈 |
+| 7 | Italy | 1.32% | 🆕 |
+| 8 | Canada | 1.32% | 🆕 |
+| 9 | Mexico | 1.32% | 🆕 |
+| 10 | Spain | 1.32% | 🆕 |
+
+---
+
+### Q2: Is it in Europe?
+
+- **Attribute:** `continent` = `europe`
+- **Answer:** ❌ No
+- **Confidence:** 5.2% → 12.750000010843399% 📈 (+7.6)
+- **Active Countries:** 76 → 40
+
+**Top before:**
+| Rank | Country | Prob |
+|------|---------|------|
+| 1 | United States | 1.32% |
+| 2 | Brazil | 1.32% |
+| 3 | Australia | 1.32% |
+| 4 | Russia | 1.32% |
+| 5 | France | 1.32% |
+| 6 | Germany | 1.32% |
+| 7 | Italy | 1.32% |
+| 8 | Canada | 1.32% |
+| 9 | Mexico | 1.32% |
+| 10 | Spain | 1.32% |
+
+**Top after:**
+| Rank | Country | Prob | Δ |
+|------|---------|------|---|
+| 1 | United States | 2.5% | +1.18%📈 |
+| 2 | Brazil | 2.5% | +1.18%📈 |
+| 3 | Australia | 2.5% | +1.18%📈 |
+| 4 | Canada | 2.5% | +1.18%📈 |
+| 5 | Mexico | 2.5% | +1.18%📈 |
+| 6 | Nigeria | 2.5% | 🆕 |
+| 7 | Egypt | 2.5% | 🆕 |
+| 8 | South Africa | 2.5% | 🆕 |
+| 9 | Argentina | 2.5% | 🆕 |
+| 10 | Kenya | 2.5% | 🆕 |
+
+---
+
+### Q3: Has this country ever won a Nobel Prize?
+
+- **Attribute:** `hasNobel` = `true`
+- **Answer:** ❌ No
+- **Confidence:** 12.8% → 16.963636370753708% 📈 (+4.2)
+- **Active Countries:** 40 → 22
+
+**Top before:**
+| Rank | Country | Prob |
+|------|---------|------|
+| 1 | United States | 2.5% |
+| 2 | Brazil | 2.5% |
+| 3 | Australia | 2.5% |
+| 4 | Canada | 2.5% |
+| 5 | Mexico | 2.5% |
+| 6 | Nigeria | 2.5% |
+| 7 | Egypt | 2.5% |
+| 8 | South Africa | 2.5% |
+| 9 | Argentina | 2.5% |
+| 10 | Kenya | 2.5% |
+
+**Top after:**
+| Rank | Country | Prob | Δ |
+|------|---------|------|---|
+| 1 | Brazil | 4.55% | +2.05%📈 |
+| 2 | Ethiopia | 4.55% | 🆕 |
+| 3 | Morocco | 4.55% | 🆕 |
+| 4 | Cuba | 4.55% | 🆕 |
+| 5 | Jamaica | 4.55% | 🆕 |
+| 6 | Bolivia | 4.55% | 🆕 |
+| 7 | Venezuela | 4.55% | 🆕 |
+| 8 | Tanzania | 4.55% | 🆕 |
+| 9 | Libya | 4.55% | 🆕 |
+| 10 | Zimbabwe | 4.55% | 🆕 |
+
+---
+
+### Q4: Does it have major mountain ranges (e.g., Alps, Himalayas)?
+
+- **Attribute:** `hasMountains` = `true`
+- **Answer:** ✅ Yes
+- **Confidence:** 17% → 20.100000004829155% 📈 (+3.1)
+- **Active Countries:** 22 → 12
+
+**Top before:**
+| Rank | Country | Prob |
+|------|---------|------|
+| 1 | Brazil | 4.55% |
+| 2 | Ethiopia | 4.55% |
+| 3 | Morocco | 4.55% |
+| 4 | Cuba | 4.55% |
+| 5 | Jamaica | 4.55% |
+| 6 | Bolivia | 4.55% |
+| 7 | Venezuela | 4.55% |
+| 8 | Tanzania | 4.55% |
+| 9 | Libya | 4.55% |
+| 10 | Zimbabwe | 4.55% |
+
+**Top after:**
+| Rank | Country | Prob | Δ |
+|------|---------|------|---|
+| 1 | Ethiopia | 8.33% | +3.78%📈 |
+| 2 | Morocco | 8.33% | +3.78%📈 |
+| 3 | Cuba | 8.33% | +3.78%📈 |
+| 4 | Jamaica | 8.33% | +3.78%📈 |
+| 5 | Bolivia | 8.33% | +3.78%📈 |
+| 6 | Venezuela | 8.33% | +3.78%📈 |
+| 7 | Tanzania | 8.33% | +3.78%📈 |
+| 8 | Uganda | 8.33% | 🆕 |
+| 9 | Cameroon | 8.33% | 🆕 |
+| 10 | Madagascar | 8.33% | 🆕 |
+
+---
+
+### Q5: Does it have a large population (around 50–100 million)?
+
+- **Attribute:** `population` = `large`
+- **Answer:** 🟠 Probably Not
+- **Confidence:** 20.1% → 24.494139614302977% 📈 (+4.4)
+- **Active Countries:** 12 → 12
+
+**Top before:**
+| Rank | Country | Prob |
+|------|---------|------|
+| 1 | Ethiopia | 8.33% |
+| 2 | Morocco | 8.33% |
+| 3 | Cuba | 8.33% |
+| 4 | Jamaica | 8.33% |
+| 5 | Bolivia | 8.33% |
+| 6 | Venezuela | 8.33% |
+| 7 | Tanzania | 8.33% |
+| 8 | Uganda | 8.33% |
+| 9 | Cameroon | 8.33% |
+| 10 | Madagascar | 8.33% |
+
+**Top after:**
+| Rank | Country | Prob | Δ |
+|------|---------|------|---|
+| 1 | Ethiopia | 15.98% | +7.65%📈 |
+| 2 | Cuba | 15.98% | +7.65%📈 |
+| 3 | Jamaica | 15.98% | +7.65%📈 |
+| 4 | Bolivia | 15.98% | +7.65%📈 |
+| 5 | Panama | 15.98% | 🆕 |
+| 6 | Ecuador | 15.98% | 🆕 |
+| 7 | Morocco | 0.68% | -7.65%📉 |
+| 8 | Venezuela | 0.68% | -7.65%📉 |
+| 9 | Tanzania | 0.68% | -7.65%📉 |
+| 10 | Uganda | 0.68% | -7.65%📉 |
+
+---
+
+### Q6: Does it export coffee as a major commodity?
+
+- **Attribute:** `exports` = `coffee`
+- **Answer:** ✅ Yes
+- **Confidence:** 24.5% → 31.253152995659388% 📈 (+6.8)
+- **Active Countries:** 12 → 7
+
+**Top before:**
+| Rank | Country | Prob |
+|------|---------|------|
+| 1 | Ethiopia | 15.98% |
+| 2 | Cuba | 15.98% |
+| 3 | Jamaica | 15.98% |
+| 4 | Bolivia | 15.98% |
+| 5 | Panama | 15.98% |
+| 6 | Ecuador | 15.98% |
+| 7 | Morocco | 0.68% |
+| 8 | Venezuela | 0.68% |
+| 9 | Tanzania | 0.68% |
+| 10 | Uganda | 0.68% |
+
+**Top after:**
+| Rank | Country | Prob | Δ |
+|------|---------|------|---|
+| 1 | Ethiopia | 31.53% | +15.55%📈 |
+| 2 | Jamaica | 31.53% | +15.55%📈 |
+| 3 | Panama | 31.53% | +15.55%📈 |
+| 4 | Tanzania | 1.35% | +0.67%📈 |
+| 5 | Uganda | 1.35% | +0.67%📈 |
+| 6 | Cameroon | 1.35% | 🆕 |
+| 7 | Madagascar | 1.35% | 🆕 |
+
+---
+
+### Q7: Is it in East Africa?
+
+- **Attribute:** `subRegion` = `east africa`
+- **Answer:** ❌ No
+- **Confidence:** 31.3% → 33.581526965835046% 📈 (+2.3)
+- **Active Countries:** 7 → 3
+
+**Top before:**
+| Rank | Country | Prob |
+|------|---------|------|
+| 1 | Ethiopia | 31.53% |
+| 2 | Jamaica | 31.53% |
+| 3 | Panama | 31.53% |
+| 4 | Tanzania | 1.35% |
+| 5 | Uganda | 1.35% |
+| 6 | Cameroon | 1.35% |
+| 7 | Madagascar | 1.35% |
+
+**Top after:**
+| Rank | Country | Prob | Δ |
+|------|---------|------|---|
+| 1 | Jamaica | 48.95% | +17.42%📈 |
+| 2 | Panama | 48.95% | +17.42%📈 |
+| 3 | Cameroon | 2.1% | +0.75%📈 |
+
+---
+
+### Q8: Is it in the Caribbean?
+
+- **Attribute:** `subRegion` = `caribbean`
+- **Answer:** ❌ No
+- **Confidence:** 33.6% → 92.7926674124001% 📈 (+59.2)
+- **Active Countries:** 3 → 3
+
+**Top before:**
+| Rank | Country | Prob |
+|------|---------|------|
+| 1 | Jamaica | 48.95% |
+| 2 | Panama | 48.95% |
+| 3 | Cameroon | 2.1% |
+
+**Top after:**
+| Rank | Country | Prob | Δ |
+|------|---------|------|---|
+| 1 | Panama | 95.88% | +46.93%📈 |
+| 2 | Cameroon | 4.11% | +2.01%📈 |
+| 3 | Jamaica | 0.01% | -48.94%📉 |
+
+---
+
+### Q9: Is it a small country by population (under 15 million)?
+
+- **Attribute:** `population` = `small`
+- **Answer:** ✅ Yes
+- **Confidence:** 92.8% → 95.58408726156165% 📈 (+2.8)
+- **Active Countries:** 3 → 3
+
+**Top before:**
+| Rank | Country | Prob |
+|------|---------|------|
+| 1 | Panama | 95.88% |
+| 2 | Cameroon | 4.11% |
+| 3 | Jamaica | 0.01% |
+
+**Top after:**
+| Rank | Country | Prob | Δ |
+|------|---------|------|---|
+| 1 | Panama | 99.99% | +4.11%📈 |
+| 2 | Jamaica | 0.01% | ±0% |
+| 3 | Cameroon | 0% | -4.11%📉 |
+
+---
+
+### Q10: Was this country formerly a Spanish colony?
+
+- **Attribute:** `colonizedBy` = `spain`
+- **Answer:** ✅ Yes
+- **Confidence:** 95.6% → 95.59999668034061% ➡️ (-0.0)
+- **Active Countries:** 3 → 3
+
+**Top before:**
+| Rank | Country | Prob |
+|------|---------|------|
+| 1 | Panama | 99.99% |
+| 2 | Jamaica | 0.01% |
+| 3 | Cameroon | 0% |
+
+**Top after:**
+| Rank | Country | Prob | Δ |
+|------|---------|------|---|
+| 1 | Panama | 100% | +0.01%📈 |
+| 2 | Jamaica | 0% | -0.01%📉 |
+| 3 | Cameroon | 0% | ±0% |
+
+---
+
+### Q11: Is Spanish the primary language?
+
+- **Attribute:** `language` = `spanish`
+- **Answer:** ✅ Yes
+- **Confidence:** 95.6% → 95.60000000039378% ➡️ (0.0)
+- **Active Countries:** 3 → 3
+
+**Top before:**
+| Rank | Country | Prob |
+|------|---------|------|
+| 1 | Panama | 100% |
+| 2 | Jamaica | 0% |
+| 3 | Cameroon | 0% |
+
+**Top after:**
+| Rank | Country | Prob | Δ |
+|------|---------|------|---|
+| 1 | Panama | 100% | ±0% |
+| 2 | Jamaica | 0% | ±0% |
+| 3 | Cameroon | 0% | ±0% |
+
+---
+
+## 🎯 Final Guess
+
+| | |
+|--|--|
+| **Prediction** | Panama |
+| **Correct Answer** | Panama |
+| **Confidence** | 95% |
+| **Questions Asked** | 11 |
+| **Verdict** | ✅ CORRECT |
