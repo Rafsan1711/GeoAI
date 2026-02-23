@@ -1,16 +1,11 @@
 name: Sync Data Files (frontend ↔ backend)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# WHAT THIS DOES:
-#   Whenever a file inside frontend/data/ OR backend/data/ is changed,
-#   this workflow copies that file to the OTHER data folder automatically.
-#
-#   frontend/data/countries.json  ──changed──►  backend/data/countries.json
-#   backend/data/countries.json   ──changed──►  frontend/data/countries.json
-#   frontend/data/questions.json  ──changed──►  backend/data/questions.json
-#   backend/data/questions.json   ──changed──►  frontend/data/questions.json
-#
-#   Works for ANY file inside data/ — add new files anytime, they sync too.
+# LOGIC:
+#   - frontend/data/* changed  →  copy to backend/data/   (same filename)
+#   - backend/data/*  changed  →  copy to frontend/data/  (same filename)
+#   - Both changed in same commit → both directions handled, no double-loop
+#   - Commits made by github-actions[bot] are IGNORED to prevent infinite loop
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -20,250 +15,204 @@ on:
       - "frontend/data/**"
       - "backend/data/**"
 
-  # Manual trigger (Actions tab → Run workflow)
-  workflow_dispatch:
-    inputs:
-      force_sync:
-        description: "Force sync ALL data files (both directions)"
-        required: false
-        default: "false"
-        type: choice
-        options:
-          - "false"
-          - "true"
-
-# Only one sync job runs at a time — prevents race conditions
-concurrency:
-  group: sync-data
-  cancel-in-progress: false
-
 jobs:
-  sync:
-    name: Sync data files
+  sync-data:
     runs-on: ubuntu-latest
 
-    # Skip if this commit was made BY this workflow (prevent infinite loop)
-    if: |
-      github.actor != 'github-actions[bot]' &&
-      !contains(github.event.head_commit.message, '[skip sync]') &&
-      !contains(github.event.head_commit.message, '[sync]')
+    # ── CRITICAL: Skip commits made by this bot itself (infinite loop guard) ──
+    if: github.actor != 'github-actions[bot]'
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2   # Need previous commit to detect changed files
+          fetch-depth: 2          # Need 2 commits to diff properly
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # ── Step 1: Detect exactly which data files changed in this push ─────────
       - name: Detect changed data files
         id: detect
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📂 Detecting changed data files..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "=== Detecting changed files in data folders ==="
 
-          FORCE="${{ github.event.inputs.force_sync }}"
+          # Get list of changed files between previous commit and current HEAD
+          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD 2>/dev/null)
+          echo "All changed files:"
+          echo "$CHANGED"
 
-          if [ "$FORCE" = "true" ]; then
-            echo "⚡ Force sync mode — syncing ALL data files"
+          # Filter: files inside frontend/data/ or backend/data/
+          FRONTEND_CHANGED=$(echo "$CHANGED" | grep '^frontend/data/' | grep -v '^$' || true)
+          BACKEND_CHANGED=$(echo "$CHANGED"  | grep '^backend/data/'  | grep -v '^$' || true)
 
-            # List every file in both data folders
-            ALL_FILES=$(find frontend/data backend/data -type f 2>/dev/null | sort)
-            echo "Found files:"
-            echo "$ALL_FILES"
+          echo ""
+          echo "frontend/data/ changed: [$FRONTEND_CHANGED]"
+          echo "backend/data/  changed: [$BACKEND_CHANGED]"
 
-            # Build the changed-files list: take unique filenames
-            FILENAMES=$(find frontend/data backend/data -type f -exec basename {} \; 2>/dev/null | sort -u)
+          # Write to step outputs (multiline safe)
+          {
+            echo "frontend_changed<<EOF"
+            echo "$FRONTEND_CHANGED"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "backend_changed<<EOF"
+            echo "$BACKEND_CHANGED"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          # Did anything change at all?
+          if [ -z "$FRONTEND_CHANGED" ] && [ -z "$BACKEND_CHANGED" ]; then
+            echo "nothing_changed=true" >> "$GITHUB_OUTPUT"
           else
-            # Get list of files changed in this push
-            CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD 2>/dev/null)
-            echo "Changed files in this push:"
-            echo "$CHANGED"
-
-            # Filter to only data folder files
-            DATA_CHANGED=$(echo "$CHANGED" | grep -E '^(frontend|backend)/data/' || true)
-
-            if [ -z "$DATA_CHANGED" ]; then
-              echo "ℹ️  No data files changed. Nothing to sync."
-              echo "has_changes=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-
-            echo "Data files changed:"
-            echo "$DATA_CHANGED"
-
-            # Extract unique filenames (e.g. countries.json, questions.json)
-            FILENAMES=$(echo "$DATA_CHANGED" | xargs -I{} basename {} | sort -u)
+            echo "nothing_changed=false" >> "$GITHUB_OUTPUT"
           fi
 
-          echo "Files to sync: $FILENAMES"
-          echo "filenames<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$FILENAMES" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-          echo "has_changes=true" >> "$GITHUB_OUTPUT"
-
-      - name: Sync files bidirectionally
-        id: sync
-        if: steps.detect.outputs.has_changes == 'true'
+      # ── Step 2: Early exit if nothing relevant changed ────────────────────────
+      - name: Early exit check
+        if: steps.detect.outputs.nothing_changed == 'true'
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔄 Starting bidirectional sync..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "No changes in frontend/data/ or backend/data/ — nothing to sync."
+          exit 0
+
+      # ── Step 3: Sync frontend/data/* → backend/data/ ─────────────────────────
+      - name: Sync frontend → backend
+        if: steps.detect.outputs.frontend_changed != ''
+        run: |
+          echo "=== Syncing frontend/data/ → backend/data/ ==="
+
+          # Ensure destination exists
+          mkdir -p backend/data
 
           SYNCED=0
           SKIPPED=0
-          ERRORS=0
-          SYNC_LOG=""
 
-          FRONTEND_DIR="frontend/data"
-          BACKEND_DIR="backend/data"
+          while IFS= read -r filepath; do
+            [ -z "$filepath" ] && continue
 
-          while IFS= read -r filename; do
-            [ -z "$filename" ] && continue
+            # Extract just the filename (e.g. "countries.json")
+            filename=$(basename "$filepath")
 
-            FRONTEND_FILE="$FRONTEND_DIR/$filename"
-            BACKEND_FILE="$BACKEND_DIR/$filename"
+            src="frontend/data/$filename"
+            dst="backend/data/$filename"
 
-            echo ""
-            echo "──────────────────────────────────"
-            echo "📄 Processing: $filename"
-
-            FE_EXISTS=false
-            BE_EXISTS=false
-            [ -f "$FRONTEND_FILE" ] && FE_EXISTS=true
-            [ -f "$BACKEND_FILE"  ] && BE_EXISTS=true
-
-            # ── Case 1: Both exist → sync whichever was more recently changed ──
-            if [ "$FE_EXISTS" = "true" ] && [ "$BE_EXISTS" = "true" ]; then
-
-              # Compare SHA256 checksums — if identical, skip
-              FE_HASH=$(sha256sum "$FRONTEND_FILE" | awk '{print $1}')
-              BE_HASH=$(sha256sum "$BACKEND_FILE"  | awk '{print $1}')
-
-              if [ "$FE_HASH" = "$BE_HASH" ]; then
-                echo "✅ Files are identical — no sync needed"
-                SKIPPED=$((SKIPPED + 1))
-                SYNC_LOG="$SYNC_LOG\n⏭️  $filename — already in sync"
-                continue
-              fi
-
-              # Determine which file was changed in this commit
-              FORCE="${{ github.event.inputs.force_sync }}"
-              CHANGED_IN_COMMIT=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
-
-              FE_CHANGED=$(echo "$CHANGED_IN_COMMIT" | grep -c "frontend/data/$filename" || true)
-              BE_CHANGED=$(echo "$CHANGED_IN_COMMIT" | grep -c "backend/data/$filename" || true)
-
-              if [ "$FORCE" = "true" ]; then
-                # Force mode: frontend is source of truth
-                SOURCE="$FRONTEND_FILE"
-                DEST="$BACKEND_FILE"
-                DIRECTION="frontend → backend"
-              elif [ "$FE_CHANGED" -gt 0 ] && [ "$BE_CHANGED" -gt 0 ]; then
-                # Both changed in same commit — frontend wins (arbitrary but consistent)
-                echo "⚠️  Both changed simultaneously — frontend takes priority"
-                SOURCE="$FRONTEND_FILE"
-                DEST="$BACKEND_FILE"
-                DIRECTION="frontend → backend (conflict resolved)"
-              elif [ "$FE_CHANGED" -gt 0 ]; then
-                SOURCE="$FRONTEND_FILE"
-                DEST="$BACKEND_FILE"
-                DIRECTION="frontend → backend"
-              elif [ "$BE_CHANGED" -gt 0 ]; then
-                SOURCE="$BACKEND_FILE"
-                DEST="$FRONTEND_FILE"
-                DIRECTION="backend → frontend"
-              else
-                # Changed by some other means (e.g. force_sync on unrelated commit)
-                # Use modification time as tiebreaker
-                FE_MOD=$(stat -c %Y "$FRONTEND_FILE" 2>/dev/null || echo 0)
-                BE_MOD=$(stat -c %Y "$BACKEND_FILE"  2>/dev/null || echo 0)
-                if [ "$FE_MOD" -ge "$BE_MOD" ]; then
-                  SOURCE="$FRONTEND_FILE"
-                  DEST="$BACKEND_FILE"
-                  DIRECTION="frontend → backend (newer mtime)"
-                else
-                  SOURCE="$BACKEND_FILE"
-                  DEST="$FRONTEND_FILE"
-                  DIRECTION="backend → frontend (newer mtime)"
-                fi
-              fi
-
-              cp "$SOURCE" "$DEST"
-              echo "✅ Synced: $DIRECTION"
-              SYNCED=$((SYNCED + 1))
-              SYNC_LOG="$SYNC_LOG\n✅ $filename — $DIRECTION"
-
-            # ── Case 2: Only frontend exists → copy to backend ──
-            elif [ "$FE_EXISTS" = "true" ] && [ "$BE_EXISTS" = "false" ]; then
-              mkdir -p "$BACKEND_DIR"
-              cp "$FRONTEND_FILE" "$BACKEND_FILE"
-              echo "✅ Created in backend (was missing): $filename"
-              SYNCED=$((SYNCED + 1))
-              SYNC_LOG="$SYNC_LOG\n✅ $filename — frontend → backend (new file)"
-
-            # ── Case 3: Only backend exists → copy to frontend ──
-            elif [ "$FE_EXISTS" = "false" ] && [ "$BE_EXISTS" = "true" ]; then
-              mkdir -p "$FRONTEND_DIR"
-              cp "$BACKEND_FILE" "$FRONTEND_FILE"
-              echo "✅ Created in frontend (was missing): $filename"
-              SYNCED=$((SYNCED + 1))
-              SYNC_LOG="$SYNC_LOG\n✅ $filename — backend → frontend (new file)"
-
-            # ── Case 4: Neither exists (shouldn't happen) ──
-            else
-              echo "⚠️  File '$filename' not found in either location — skipping"
-              ERRORS=$((ERRORS + 1))
-              SYNC_LOG="$SYNC_LOG\n⚠️  $filename — not found anywhere"
+            if [ ! -f "$src" ]; then
+              echo "  SKIP: $src does not exist (deleted file?)"
+              SKIPPED=$((SKIPPED + 1))
+              continue
             fi
 
-          done <<< "${{ steps.detect.outputs.filenames }}"
+            # Check if destination already has identical content (avoid noise)
+            if [ -f "$dst" ] && cmp -s "$src" "$dst"; then
+              echo "  IDENTICAL: $filename — no sync needed"
+              SKIPPED=$((SKIPPED + 1))
+              continue
+            fi
+
+            cp "$src" "$dst"
+            echo "  SYNCED: $filename  (frontend/data → backend/data)"
+            SYNCED=$((SYNCED + 1))
+
+          done <<< "${{ steps.detect.outputs.frontend_changed }}"
 
           echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 Sync Summary:"
-          echo "   ✅ Synced  : $SYNCED file(s)"
-          echo "   ⏭️  Skipped : $SKIPPED file(s)"
-          echo "   ⚠️  Errors  : $ERRORS file(s)"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "frontend→backend: $SYNCED synced, $SKIPPED skipped"
 
-          echo "synced=$SYNCED" >> "$GITHUB_OUTPUT"
-          echo "skipped=$SKIPPED" >> "$GITHUB_OUTPUT"
-          printf "sync_log=%b\n" "$SYNC_LOG" >> "$GITHUB_OUTPUT"
+      # ── Step 4: Sync backend/data/* → frontend/data/ ─────────────────────────
+      - name: Sync backend → frontend
+        if: steps.detect.outputs.backend_changed != ''
+        run: |
+          echo "=== Syncing backend/data/ → frontend/data/ ==="
 
+          # Ensure destination exists
+          mkdir -p frontend/data
+
+          SYNCED=0
+          SKIPPED=0
+
+          while IFS= read -r filepath; do
+            [ -z "$filepath" ] && continue
+
+            filename=$(basename "$filepath")
+
+            src="backend/data/$filename"
+            dst="frontend/data/$filename"
+
+            if [ ! -f "$src" ]; then
+              echo "  SKIP: $src does not exist (deleted file?)"
+              SKIPPED=$((SKIPPED + 1))
+              continue
+            fi
+
+            if [ -f "$dst" ] && cmp -s "$src" "$dst"; then
+              echo "  IDENTICAL: $filename — no sync needed"
+              SKIPPED=$((SKIPPED + 1))
+              continue
+            fi
+
+            cp "$src" "$dst"
+            echo "  SYNCED: $filename  (backend/data → frontend/data)"
+            SYNCED=$((SYNCED + 1))
+
+          done <<< "${{ steps.detect.outputs.backend_changed }}"
+
+          echo ""
+          echo "backend→frontend: $SYNCED synced, $SKIPPED skipped"
+
+      # ── Step 5: Check if any actual file changes were made ────────────────────
+      - name: Check for actual changes to commit
+        id: git_status
+        run: |
+          git add frontend/data/ backend/data/
+
+          if git diff --cached --quiet; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing to commit — files were already in sync."
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Changes staged and ready to commit:"
+            git diff --cached --name-only
+          fi
+
+      # ── Step 6: Commit and push synced files ─────────────────────────────────
       - name: Commit synced files
-        if: |
-          steps.detect.outputs.has_changes == 'true' &&
-          steps.sync.outputs.synced != '0'
+        if: steps.git_status.outputs.has_changes == 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add frontend/data/ backend/data/
+          # Build a descriptive commit message listing what was synced
+          FRONTEND_LIST="${{ steps.detect.outputs.frontend_changed }}"
+          BACKEND_LIST="${{ steps.detect.outputs.backend_changed }}"
 
-          # Only commit if there are actual staged changes
-          if git diff --cached --quiet; then
-            echo "ℹ️  No file differences to commit (already in sync)."
-          else
-            SYNCED="${{ steps.sync.outputs.synced }}"
-            FILENAMES=$(echo "${{ steps.detect.outputs.filenames }}" | tr '\n' ' ' | xargs)
+          MSG_PARTS=()
 
-            git commit -m "sync: data files synced ($FILENAMES) [sync] [skip ci]"
-            git push
-
-            echo "✅ Committed and pushed synced data files."
+          if [ -n "$FRONTEND_LIST" ]; then
+            FILES=$(echo "$FRONTEND_LIST" | xargs -I{} basename {} | tr '\n' ',' | sed 's/,$//')
+            MSG_PARTS+=("frontend→backend: $FILES")
           fi
 
-      - name: Print final status
+          if [ -n "$BACKEND_LIST" ]; then
+            FILES=$(echo "$BACKEND_LIST" | xargs -I{} basename {} | tr '\n' ',' | sed 's/,$//')
+            MSG_PARTS+=("backend→frontend: $FILES")
+          fi
+
+          # Join parts
+          COMMIT_MSG=$(IFS=' | '; echo "sync: data ${MSG_PARTS[*]} [skip ci]")
+
+          git commit -m "$COMMIT_MSG"
+          git push
+
+          echo "✅ Sync commit pushed successfully."
+
+      # ── Step 7: Summary ───────────────────────────────────────────────────────
+      - name: Print summary
         if: always()
         run: |
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🏁 Workflow complete"
-          if [ "${{ steps.detect.outputs.has_changes }}" = "false" ]; then
-            echo "   No data files were changed — nothing to do."
-          else
-            echo "   Synced : ${{ steps.sync.outputs.synced }} file(s)"
-            echo "   Skipped: ${{ steps.sync.outputs.skipped }} file(s)"
-          fi
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "════════════════════════════════════"
+          echo "  GeoAI Data Sync — Job Complete"
+          echo "════════════════════════════════════"
+          echo "  Actor       : ${{ github.actor }}"
+          echo "  Commit SHA  : ${{ github.sha }}"
+          echo "  Has changes : ${{ steps.git_status.outputs.has_changes }}"
+          echo "════════════════════════════════════"
