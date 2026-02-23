@@ -5,8 +5,9 @@ on:
     branches:
       - main
     paths-ignore:
-      - 'README.md'          # Infinite loop avoid korte
-      - 'Debug/Countries/**' # Bot test e 114+ file push hoy — workflow waste avoid korte
+      - 'README.md'          # infinite loop avoid
+      - 'Debug/**'           # bot debug files trigger korbena
+      - 'CHANGELOG.md'       # changelog modify trigger korbena
 
 jobs:
   update-structure:
@@ -18,30 +19,36 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check if any file was ONLY added or deleted (not modified)
+      - name: Check ONLY for file Add or Delete (skip if only modified)
         id: check
         run: |
-          # Strictly only A (added) or D (deleted) status check — M (modified) ignore
-          # Debug/Countries/** changes already blocked by paths-ignore above,
-          # so no need to filter them again here.
-          CHANGED=$(git diff --name-status HEAD~1 HEAD | awk '$1 == "A" || $1 == "D"' | wc -l)
+          # README.md, Debug/**, CHANGELOG.md bade shob file check
+          CHANGED=$(git diff --name-status HEAD~1 HEAD \
+            | grep -v '^[AM]\s*README\.md' \
+            | grep -v '^[AM]\s*Debug/' \
+            | grep -v '^[AM]\s*CHANGELOG\.md' \
+            | awk '$1 == "A" || $1 == "D"' \
+            | wc -l)
+
+          echo "Add/Delete count (excluding ignored paths): $CHANGED"
 
           if [ "$CHANGED" -gt 0 ]; then
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
-            echo "File add/delete detected ($CHANGED file(s)). Proceeding..."
+            echo "✅ New file added or deleted — will update README."
           else
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
-            echo "No file add/delete found (only modifications or no changes). Skipping."
+            echo "⏭️  Only modifications found — skipping README update."
           fi
+
+      - name: Install tree
+        if: steps.check.outputs.has_changes == 'true'
+        run: sudo apt-get install -y tree
 
       - name: Generate directory tree
         id: tree
         if: steps.check.outputs.has_changes == 'true'
         run: |
-          sudo apt-get install -y tree
-
-          TREE_OUTPUT=$(tree -a \
-            --noreport \
+          TREE_OUTPUT=$(tree -a --noreport \
             -I '.git|node_modules|__pycache__|*.pyc|.DS_Store|*.egg-info|.env|venv|.venv' \
             .)
 
@@ -51,7 +58,7 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Collapse Debug/Countries in tree output and update README.md
+      - name: Collapse Debug/Countries and update README.md
         if: steps.check.outputs.has_changes == 'true'
         run: |
           python3 << 'PYEOF'
@@ -62,25 +69,6 @@ jobs:
 
           tree_output = os.environ["TREE_OUTPUT"]
 
-          # ─── Collapse Debug/Countries/* entries ───────────────────────────────────
-          # tree output e Debug/Countries/ er under e sob file/folder line gulo
-          # detect kore shegulor badle PREDEFINED placeholder line diye replace korbo.
-          #
-          # Ei placeholder HARDCODED — workflow kabhi change korbe na:
-          #   └── All-Countries-Debug.md  (115+ country files collapsed)
-          #
-          # Karon: Debug/Countries/ e file add/delete hole workflow-i run hoy na
-          # (paths-ignore diye block kora), tai ei placeholder sorboda same thakbe.
-          # ──────────────────────────────────────────────────────────────────────────
-
-          PLACEHOLDER = "All-Countries-Debug.md  (115+ country files collapsed)"
-
-          lines = tree_output.splitlines()
-          new_lines = []
-          skip_mode         = False
-          countries_indent  = None
-          placeholder_added = False
-
           def get_prefix_len(line):
               match = re.match(r'^([\s│├└─]*)', line)
               return len(match.group(1)) if match else 0
@@ -88,49 +76,39 @@ jobs:
           def get_name(line):
               return re.sub(r'^[\s│├└─]+', '', line).strip()
 
-          i = 0
-          while i < len(lines):
-              line = lines[i]
+          lines = tree_output.splitlines()
+          new_lines = []
+          skip_mode = False
+          countries_indent = None
+          placeholder_added = False
+
+          for line in lines:
               name = get_name(line)
 
               if skip_mode:
                   current_indent = get_prefix_len(line)
                   if current_indent > countries_indent:
-                      # Countries er child line — skip koro
                       if not placeholder_added:
-                          # Predefined placeholder insert koro (ekbar-i)
                           indent_str = ' ' * (countries_indent + 4)
-                          new_lines.append(f"{indent_str}└── {PLACEHOLDER}")
+                          new_lines.append(f"{indent_str}└── All-Countries-Debug.md  (115+ country files collapsed)")
                           placeholder_added = True
-                      i += 1
                       continue
                   else:
-                      # Countries scope shesh
-                      skip_mode        = False
+                      skip_mode = False
                       countries_indent = None
 
               if name in ('Countries', 'Countries/'):
-                  countries_indent  = get_prefix_len(line)
-                  skip_mode         = True
+                  countries_indent = get_prefix_len(line)
+                  skip_mode = True
                   placeholder_added = False
                   new_lines.append(line)
-                  i += 1
                   continue
 
               new_lines.append(line)
-              i += 1
-
-          # Edge case: Countries folder er vitore kono file nai (empty folder)
-          # tai skip_mode shesh-e placeholder add hoyni — add kore debo
-          if skip_mode and not placeholder_added and countries_indent is not None:
-              indent_str = ' ' * (countries_indent + 4)
-              new_lines.append(f"{indent_str}└── {PLACEHOLDER}")
 
           collapsed_tree = "\n".join(new_lines)
-          # ──────────────────────────────────────────────────────────────────────────
 
           new_block = f"## Repository Structure\n\n```\n{collapsed_tree}\n```\n"
-
           pattern = r"## Repository Structure\s*\n[\s\S]*?(?=\n## |\Z)"
           new_content, count = re.subn(pattern, new_block, content)
 
@@ -141,7 +119,7 @@ jobs:
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_content)
 
-          print("README.md updated successfully. Debug/Countries collapsed with predefined placeholder.")
+          print("✅ README.md updated successfully.")
           PYEOF
         env:
           TREE_OUTPUT: ${{ steps.tree.outputs.tree }}
