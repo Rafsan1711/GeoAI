@@ -1,0 +1,185 @@
+name: Sync Data Files (frontend ↔ backend)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Trigger: shudhumatro data folder er file change hole
+# frontend/data/  ba  backend/data/  er kono file commit hole
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/data/**'
+      - 'backend/data/**'
+
+jobs:
+  sync-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── কোন কোন data file change হয়েছে বের করো ────────────────────────────
+      - name: Detect changed data files
+        id: detect
+        run: |
+          # HEAD~1 theke HEAD porzonto changed files (A=added, M=modified, D=deleted)
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD \
+            | grep -E '^(frontend|backend)/data/[^/]+$' \
+            || true)
+
+          echo "Changed data files:"
+          echo "$CHANGED_FILES"
+
+          # frontend/data/ te ki change hoyeche?
+          FRONTEND_CHANGED=$(echo "$CHANGED_FILES" | grep '^frontend/data/' || true)
+          # backend/data/ te ki change hoyeche?
+          BACKEND_CHANGED=$(echo "$CHANGED_FILES" | grep '^backend/data/' || true)
+
+          # Unique filenames (just the basename, e.g. countries.json)
+          FRONTEND_FILES=$(echo "$FRONTEND_CHANGED" | xargs -I{} basename {} 2>/dev/null | sort -u || true)
+          BACKEND_FILES=$(echo "$BACKEND_CHANGED" | xargs -I{} basename {} 2>/dev/null | sort -u || true)
+
+          echo "frontend_files=$FRONTEND_FILES" >> "$GITHUB_OUTPUT"
+          echo "backend_files=$BACKEND_FILES"   >> "$GITHUB_OUTPUT"
+
+          # Kono sync korার দরকার আছে কিনা
+          if [ -z "$FRONTEND_CHANGED" ] && [ -z "$BACKEND_CHANGED" ]; then
+            echo "needs_sync=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "needs_sync=true"  >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── Sync logic ────────────────────────────────────────────────────────
+      - name: Sync changed files to mirror folder
+        if: steps.detect.outputs.needs_sync == 'true'
+        run: |
+          python3 << 'PYEOF'
+          import subprocess, os, shutil, json
+
+          def git_changed_files():
+              """HEAD~1..HEAD te changed data files er list"""
+              result = subprocess.run(
+                  ['git', 'diff', '--name-only', 'HEAD~1', 'HEAD'],
+                  capture_output=True, text=True
+              )
+              files = [
+                  f.strip() for f in result.stdout.splitlines()
+                  if f.strip()
+              ]
+              # Shudhu data folder er direct files (subdirectory noy)
+              data_files = [
+                  f for f in files
+                  if (f.startswith('frontend/data/') or f.startswith('backend/data/'))
+                  and f.count('/') == 2  # exactly: folder/data/filename
+              ]
+              return data_files
+
+          def mirror_path(src_path):
+              """
+              frontend/data/X  →  backend/data/X
+              backend/data/X   →  frontend/data/X
+              """
+              if src_path.startswith('frontend/data/'):
+                  return src_path.replace('frontend/data/', 'backend/data/', 1)
+              elif src_path.startswith('backend/data/'):
+                  return src_path.replace('backend/data/', 'frontend/data/', 1)
+              return None
+
+          changed = git_changed_files()
+          print(f"Changed data files: {changed}")
+
+          synced = []
+          skipped = []
+          errors = []
+
+          for src in changed:
+              dst = mirror_path(src)
+              if dst is None:
+                  continue
+
+              # Source file exist kore?
+              if not os.path.exists(src):
+                  # Deleted file — mirror ta o delete korbo
+                  if os.path.exists(dst):
+                      os.remove(dst)
+                      synced.append(f"🗑️  Deleted mirror: {dst}")
+                  else:
+                      skipped.append(f"⚠️  Source deleted but mirror didn't exist: {dst}")
+                  continue
+
+              # JSON validate koro (optional safety check)
+              if src.endswith('.json'):
+                  try:
+                      with open(src, 'r', encoding='utf-8') as f:
+                          json.load(f)
+                  except json.JSONDecodeError as e:
+                      errors.append(f"❌ Invalid JSON in {src}: {e}")
+                      continue
+
+              # Mirror folder exist kore?
+              os.makedirs(os.path.dirname(dst), exist_ok=True)
+
+              # Source == destination? (same content already?)
+              if os.path.exists(dst):
+                  with open(src, 'rb') as f1, open(dst, 'rb') as f2:
+                      if f1.read() == f2.read():
+                          skipped.append(f"⏭️  Already in sync: {dst}")
+                          continue
+
+              # Copy
+              shutil.copy2(src, dst)
+              synced.append(f"✅ Synced: {src}  →  {dst}")
+
+          # Summary
+          print("\n─── Sync Summary ───────────────────────")
+          for s in synced:
+              print(s)
+          for s in skipped:
+              print(s)
+          for e in errors:
+              print(e)
+          print("────────────────────────────────────────")
+
+          if errors:
+              print(f"\n❌ {len(errors)} error(s) found. Failing.")
+              exit(1)
+
+          if synced:
+              print(f"\n✅ {len(synced)} file(s) synced.")
+          else:
+              print("\nℹ️  Nothing to sync (all files already in sync).")
+
+          # Signal to next step
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"synced_count={len(synced)}\n")
+              f.write(f"synced_files={'|'.join(synced)}\n")
+          PYEOF
+        id: sync
+
+      # ── Commit করো যদি কিছু sync হয় ─────────────────────────────────────
+      - name: Commit synced files
+        if: steps.detect.outputs.needs_sync == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Shudhu data folder er changes stage koro
+          git add frontend/data/ backend/data/
+
+          if git diff --cached --quiet; then
+            echo "ℹ️  Nothing to commit — already in sync."
+          else
+            # Kono file gulo sync holo seta commit message e likho
+            CHANGED_SUMMARY=$(git diff --cached --name-only | tr '\n' ' ')
+            git commit -m "sync: mirror data files ↔ [skip ci]
+
+Synced: $CHANGED_SUMMARY
+Auto-synced by sync-data-files workflow."
+
+            git push
+            echo "✅ Sync commit pushed."
+          fi
