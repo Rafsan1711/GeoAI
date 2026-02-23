@@ -22,7 +22,7 @@ An Akinator-style AI that guesses countries through yes/no questions using a Bay
 │   └── workflows
 │       ├── check-file-size.yml
 │       ├── sync-backend.yml
-│       ├── sync-data-files.yml
+│       ├── sync-data.yml
 │       └── update-readme-structure.yml
 ├── CHANGELOG.md
 ├── Debug
