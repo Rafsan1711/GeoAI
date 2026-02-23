@@ -184,7 +184,7 @@
     { "question": "Does this country's language belong to the Baltic family — one of the oldest in Europe?", "attribute": "languageFamily", "value": "baltic", "weight": 0.99 },
     { "question": "Has this country's population shrunk drastically due to emigration after 1991?", "attribute": "isFormerSoviet", "value": true, "weight": 0.87 },
 
-    
+  
     { "question": "Is this country famous for the ancient Pyramids of Giza?", "attribute": "famousFor", "value": "pyramids", "weight": 0.99 },
     { "question": "Is this country famous for the Great Wall?", "attribute": "famousFor", "value": "greatwall", "weight": 0.99 },
     { "question": "Is this country home to the Amazon rainforest?", "attribute": "famousFor", "value": "amazon", "weight": 0.97 },
