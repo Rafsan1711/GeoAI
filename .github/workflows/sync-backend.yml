@@ -2,7 +2,7 @@ name: Sync Backend → HuggingFace Space
 
 on:
   push:
-    branches: [main]
+    branches: [*]
     paths:
       - "backend/**"
   workflow_dispatch:
