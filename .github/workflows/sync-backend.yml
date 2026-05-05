@@ -2,10 +2,7 @@ name: Sync Backend → HuggingFace Space
 
 on:
   push:
-    branches:
-      - main
-      - dev
-      - test
+    branches: [main]
 
     paths:
       - "backend/**"
