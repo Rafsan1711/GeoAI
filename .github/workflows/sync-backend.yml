@@ -2,7 +2,8 @@ name: Sync Backend → HuggingFace Space
 
 on:
   push:
-    branches: [main]
+    branches: [v2.0.0]
+
     paths:
       - "backend/**"
   workflow_dispatch:
@@ -35,7 +36,7 @@ jobs:
 
           api = HfApi(token=os.environ["HF_TOKEN"])
 
-          repo_id = "Rafs-an09002/geoai-backend"
+          repo_id = "Rafs-an09002/geoai-backend-test"
           local_dir = "backend"
 
           print(f"Uploading {local_dir}/ to {repo_id} ...")
