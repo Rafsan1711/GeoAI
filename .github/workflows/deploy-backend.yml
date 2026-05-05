@@ -2,7 +2,7 @@ name: Deploy Backend → HuggingFace
 
 on:
   push:
-    branches: [main]
+    branches: [v2.0.0]
     paths: ["backend/**"]
   workflow_dispatch:
 
