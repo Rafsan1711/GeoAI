@@ -1,5 +1,30 @@
-Flask==3.0.0
-Flask-CORS==4.0.0
-gunicorn==21.2.0
-requests==2.31.0
-python-dotenv==1.0.0
+# Web Framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+pydantic==2.7.0
+pydantic-settings==2.3.0
+
+# Database
+supabase==2.5.3
+
+# Cache
+redis[asyncio]==5.0.7
+
+# ML / AI
+numpy==1.26.4
+scipy==1.13.1
+scikit-learn==1.5.0
+sentence-transformers==3.0.1
+faiss-cpu==1.8.0
+
+# Firebase
+firebase-admin==6.5.0
+
+# Gemini (AtlasMind)
+google-generativeai==0.7.2
+
+# Utilities
+python-dotenv==1.0.1
+structlog==24.2.0
+httpx==0.27.0
+python-multipart==0.0.9

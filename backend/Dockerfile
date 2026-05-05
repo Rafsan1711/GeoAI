@@ -1,22 +1,28 @@
-# GeoAI Backend — HuggingFace Docker Space
-# Python 3.11 slim
-
 FROM python:3.11-slim
 
-# HuggingFace Spaces requires port 7860
 ENV PORT=7860
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install dependencies first (layer caching)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all backend source files
+# Download embedding model at build time (fast startup later)
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+
 COPY . .
 
 EXPOSE 7860
 
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:7860", "--workers", "1", "--threads", "2", "--timeout", "120"]
+CMD ["uvicorn", "main:app", \
+     "--host", "0.0.0.0", \
+     "--port", "7860", \
+     "--workers", "2", \
+     "--log-level", "info"]
