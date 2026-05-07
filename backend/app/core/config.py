@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
 class Settings(BaseSettings):
@@ -25,8 +25,9 @@ class Settings(BaseSettings):
     ATLAS_CONFIDENCE_STAGE_4: float = 78.0
     ATLAS_FORCE_GUESS_AT_ITEMS: int = 2
 
-class Config:
-    env_file = ".env"
-    extra = "ignore"      
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore"
+    )
 
 settings = Settings()
