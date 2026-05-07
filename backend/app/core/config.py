@@ -25,7 +25,8 @@ class Settings(BaseSettings):
     ATLAS_CONFIDENCE_STAGE_4: float = 78.0
     ATLAS_FORCE_GUESS_AT_ITEMS: int = 2
 
-    class Config:
-        env_file = ".env"
+class Config:
+    env_file = ".env"
+    extra = "ignore"      
 
 settings = Settings()

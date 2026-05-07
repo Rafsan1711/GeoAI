@@ -5,6 +5,8 @@ Copy your old countries.json to backend/scripts/countries_backup.json first.
 """
 import json, os, sys
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from supabase import create_client
 from app.core.config import settings
