@@ -1,0 +1,45 @@
+name: Daily Accuracy Test
+
+on:
+  schedule:
+    - cron: "0 2 * * *"    # Every day at 2:00 AM UTC
+  workflow_dispatch:         # Manual trigger from GitHub Actions tab
+
+jobs:
+  accuracy-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Run accuracy bot
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY:         ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ENVIRONMENT: production
+          LOG_LEVEL: INFO
+        run: |
+          cd backend
+          python scripts/run_accuracy_test.py
+
+      - name: Upload results as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accuracy-results-${{ github.run_id }}
+          path: backend/accuracy_result.json
+          retention-days: 30
