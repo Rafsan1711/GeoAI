@@ -10,9 +10,11 @@ export interface AtlasBubbleProps {
   message: string;
   side?: "left" | "right";
   typing?: boolean;
+  className?: string;
+  textClassName?: string;
 }
 
-export const AtlasBubble: React.FC<AtlasBubbleProps> = ({ message, side = "right", typing = false }) => {
+export const AtlasBubble: React.FC<AtlasBubbleProps> = ({ message, side = "right", typing = false, className, textClassName }) => {
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(typing);
   const [blinkComplete, setBlinkComplete] = useState(false);
@@ -50,7 +52,8 @@ export const AtlasBubble: React.FC<AtlasBubbleProps> = ({ message, side = "right
       animate={{ opacity: 1, y: 0 }}
       className={cn(
         "relative max-w-sm p-4 bg-bg-surface border border-border-subtle rounded-2xl shadow-lg",
-        side === "right" ? "rounded-bl-none" : "rounded-br-none"
+        side === "right" ? "rounded-bl-none" : "rounded-br-none",
+        className
       )}
     >
       <div 
@@ -60,7 +63,7 @@ export const AtlasBubble: React.FC<AtlasBubbleProps> = ({ message, side = "right
         )} 
       />
       
-      <div className="relative z-10 text-text-primary text-sm font-sans leading-relaxed min-h-[1.25rem]">
+      <div className={cn("relative z-10 text-text-primary text-sm font-sans leading-relaxed min-h-[1.25rem]", textClassName)}>
         {typing && isTyping && displayedText.length === 0 ? (
           <span className="flex items-center h-5 space-x-1">
             <motion.span className="w-1.5 h-1.5 rounded-full bg-accent-cyan" animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1, repeat: Infinity, delay: 0 }} />

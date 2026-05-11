@@ -72,7 +72,8 @@ export default function Landing() {
             initial="hidden"
             animate="visible"
           >
-            <motion.div variants={fadeUp} className="mb-6">
+            <motion.div variants={fadeUp} className="mb-6 flex flex-col items-center lg:items-start">
+              <img src="/logo.png" className="w-24 h-24 mb-6 rounded-[2rem] drop-shadow-[0_0_25px_rgba(0,194,255,0.3)]" alt="GuessMyPlace Logo" />
               <Badge variant="cyan" className="px-4 py-1.5 text-sm">
                 ✦ AI-Powered Geography Game
               </Badge>

@@ -30,7 +30,6 @@ export default function Game() {
     active_count,
     questions_asked, 
     current_question, 
-    top_candidates, 
     prediction,
     alternatives,
     startGame, 
@@ -131,16 +130,22 @@ export default function Game() {
   };
 
   const AnswerButton = ({ answer, label, index, colorClass }: { answer: Answer, label: string, index: number, colorClass: string }) => (
-    <Button
-      variant="outline"
-      aria-label={`Answer ${label} (Shortcut: ${index})`}
-      className={cn("w-full h-14 justify-between px-6 border hover:text-text-primary text-text-primary group transition-all duration-300 focus-visible:ring-2 focus-visible:ring-accent-cyan", colorClass)}
-      onClick={() => submitAnswer(answer)}
-      disabled={phase === 'thinking'}
+    <motion.div
+      whileHover={phase === 'thinking' ? {} : { scale: 1.015, y: -2 }}
+      whileTap={phase === 'thinking' ? {} : { scale: 0.98 }}
+      className="w-full relative"
     >
-      <span className="font-semibold">{label}</span>
-      <Badge variant="outline" className="opacity-50 group-hover:opacity-100 bg-[#080C14]">{index}</Badge>
-    </Button>
+      <Button
+        variant="outline"
+        aria-label={`Answer ${label} (Shortcut: ${index})`}
+        className={cn("w-full h-16 justify-between px-6 md:px-8 border hover:text-text-primary text-text-primary group transition-all duration-300 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080C14] rounded-2xl shadow-sm", colorClass, phase === 'thinking' ? 'opacity-50 cursor-not-allowed grayscale' : '')}
+        onClick={() => submitAnswer(answer)}
+        disabled={phase === 'thinking'}
+      >
+        <span className="font-bold text-base sm:text-lg">{label}</span>
+        <Badge variant="outline" className="opacity-40 group-hover:opacity-100 transition-opacity bg-[#080C14] border-none w-7 h-7 flex items-center justify-center p-0 rounded-md shadow-inner text-sm">{index}</Badge>
+      </Button>
+    </motion.div>
   );
 
   return (
@@ -213,20 +218,32 @@ export default function Game() {
 
           {/* ━━━ QUESTIONING / THINKING STATE ━━━ */}
           {(phase === 'questioning' || phase === 'thinking' || phase === 'predicting' || phase === 'loading') && (
-            <motion.div key="game" {...fadeAnim} className="flex-1 flex flex-col lg:flex-row gap-8 lg:gap-12 w-full h-full">
+            <motion.div key="game" {...fadeAnim} className="flex-1 flex flex-col w-full max-w-[640px] mx-auto h-full justify-center">
               
-              {/* LEFT SIDE: MAIN QUESTION AREA */}
-              <div className="flex-1 flex flex-col">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-mono text-accent-cyan font-semibold tracking-wider uppercase text-sm">
-                    Question {questions_asked}
+              {/* MAIN QUESTION AREA */}
+              <div className="flex flex-col w-full">
+                <div className="flex flex-col space-y-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <motion.div 
+                      key={questions_asked}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="font-mono text-text-primary opacity-80 font-bold tracking-widest uppercase text-sm"
+                    >
+                      Question {questions_asked}
+                    </motion.div>
                   </div>
-                  <div className="w-32 h-2 overflow-hidden rounded-full bg-border-subtle relative flex-shrink-0">
-                    <Progress value={confidence} indicatorClassName={confidence > 80 ? 'bg-accent-green' : confidence > 50 ? 'bg-accent-cyan' : 'bg-accent-amber'} />
+                  {/* Full width confidence bar */}
+                  <div className="w-full h-2 overflow-hidden rounded-full bg-border-strong relative shadow-inner">
+                    <Progress value={confidence} className="h-full rounded-full transition-all duration-700 ease-out" indicatorClassName={confidence > 80 ? 'bg-accent-green' : confidence > 50 ? 'bg-accent-cyan' : 'bg-accent-amber'} />
                   </div>
                 </div>
                 
-                <div className="bg-bg-surface border border-border rounded-3xl p-6 md:p-12 mb-8 flex-1 flex flex-col justify-center items-center relative min-h-[300px]">
+                <motion.div 
+                  initial={{ boxShadow: '0 0 0 rgba(0,0,0,0)' }}
+                  animate={{ boxShadow: '0 10px 40px -10px rgba(0, 194, 255, 0.08)' }}
+                  className="bg-bg-surface/80 backdrop-blur-md border border-border/80 rounded-[2.5rem] p-6 sm:p-8 md:p-12 mb-8 flex flex-col justify-center items-center relative min-h-[220px]"
+                >
                   {error && (
                     <div className="absolute top-4 left-4 right-4 bg-accent-red/10 border border-accent-red/30 text-accent-red px-4 py-2 rounded-lg text-sm text-center">
                       {error}
@@ -235,69 +252,63 @@ export default function Game() {
 
                   <AnimatePresence mode="wait">
                     {(phase === 'thinking' || phase === 'predicting' || phase === 'loading') ? (
-                       <motion.div key="thinking" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}>
+                       <motion.div key="thinking" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex flex-col items-center">
                          <AtlasThinking />
+                         <span className="text-text-muted mt-4 font-mono text-sm animate-pulse">Processing your answer...</span>
                        </motion.div>
                     ) : (
-                      <motion.div key={current_question?.question_text || 'empty'} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full flex justify-center">
+                      <motion.div key={current_question?.question_text || 'empty'} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full flex justify-start items-end space-x-4 px-2 sm:px-6">
+                         <div className="flex-shrink-0">
+                           <AtlasCharacter size="lg" showLabel={false} animate={true} />
+                         </div>
                          {current_question && (
-                            <AtlasBubble message={current_question.question_text} side="left" typing={false} />
+                            <AtlasBubble 
+                              message={current_question.question_text} 
+                              side="right" 
+                              typing={false} 
+                              className="max-w-[85%] md:max-w-md p-5 md:p-6 bg-accent-cyan/5 border-accent-cyan/20 shadow-xl"
+                              textClassName="text-lg md:text-xl font-medium"
+                            />
                          )}
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
+                </motion.div>
 
-                <div className="flex flex-col space-y-3">
-                  <AnswerButton answer={Answer.YES} label="Yes" index={1} colorClass="bg-accent-green/5 border-accent-green/20 hover:bg-accent-green/10 hover:border-accent-green/50 hover:shadow-[0_0_15px_rgba(0,229,160,0.2)]" />
-                  <AnswerButton answer={Answer.PROBABLY} label="Probably" index={2} colorClass="bg-accent-cyan/5 border-accent-cyan/20 hover:bg-accent-cyan/10 hover:border-accent-cyan/50 hover:shadow-[0_0_15px_rgba(0,194,255,0.2)]" />
-                  <AnswerButton answer={Answer.DONT_KNOW} label="I Don't Know" index={3} colorClass="bg-bg-surface border-border hover:bg-bg-elevated hover:border-border-subtle" />
-                  <AnswerButton answer={Answer.PROBABLY_NOT} label="Probably Not" index={4} colorClass="bg-accent-amber/5 border-accent-amber/20 hover:bg-accent-amber/10 hover:border-accent-amber/50 hover:shadow-[0_0_15px_rgba(255,184,0,0.2)]" />
-                  <AnswerButton answer={Answer.NO} label="No" index={5} colorClass="bg-accent-red/5 border-accent-red/20 hover:bg-accent-red/10 hover:border-accent-red/50 hover:shadow-[0_0_15px_rgba(255,71,87,0.2)]" />
-                </div>
-              </div>
-
-              {/* RIGHT SIDE: LIVE INTEL PANEL */}
-              <div className="lg:w-80 flex flex-col border-t lg:border-t-0 lg:border-l border-border pt-8 lg:pt-0 lg:pl-12">
-                <div className="flex items-center space-x-2 text-text-primary font-semibold mb-6">
-                  <Brain className="w-5 h-5 text-accent-cyan" />
-                  <h2>Atlas's Thinking</h2>
-                </div>
-
-                <div className="space-y-4 mb-8">
-                  <h3 className="text-xs font-mono text-text-muted uppercase tracking-wider">Top Candidates</h3>
-                  <div className="space-y-3">
-                    {top_candidates.slice(0, 5).map((candidate, i) => (
-                      <div key={candidate.name || i} className={cn("relative p-3 rounded-lg border", i === 0 ? "border-accent-cyan/30 bg-accent-cyan/5" : "border-border-subtle bg-bg-surface")}>
-                        <div className="flex justify-between items-center mb-2 relative z-10">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-text-muted font-mono text-xs w-4">{i+1}.</span>
-                            <span className="text-xl">{candidate.emoji || '🏳️'}</span>
-                            <span className="text-sm font-medium text-text-primary truncate max-w-[120px]">{candidate.name}</span>
-                          </div>
-                          <span className="text-xs font-mono text-accent-cyan">{(candidate.probability).toFixed(1)}%</span>
-                        </div>
-                        <Progress value={candidate.probability} className="h-1 bg-bg-base" indicatorClassName="bg-accent-cyan" />
-                      </div>
-                    ))}
-                    {top_candidates.length === 0 && (
-                      <div className="text-sm text-text-muted italic px-2">Gathering data...</div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-auto">
-                  <div className="flex items-center space-x-3 mb-6 bg-bg-surface p-4 rounded-xl border border-border-subtle">
-                     <AtlasCharacter size="sm" showLabel={false} animate={false} />
-                     <div>
-                       <div className="text-xs text-text-muted font-mono">Status</div>
-                       <div className="text-sm font-semibold capitalize text-accent-cyan">Processing...</div>
-                     </div>
-                  </div>
-                  <div className="font-mono text-xs text-text-secondary bg-bg-surface py-2 px-3 rounded-lg border border-border-subtle">
-                    Active Places: <span className="text-text-primary">{active_count > 0 ? active_count : '--'}</span>
-                  </div>
-                </div>
+                <motion.div 
+                  className="flex flex-col space-y-3 mb-8"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: {
+                      opacity: 1,
+                      transition: { staggerChildren: 0.1 }
+                    }
+                  }}
+                >
+                  <motion.div variants={fadeAnim}><AnswerButton answer={Answer.YES} label="Yes" index={1} colorClass="bg-accent-green/5 border-accent-green/30 hover:bg-accent-green/10 hover:border-accent-green focus-visible:ring-accent-green hover:shadow-[0_0_20px_rgba(0,229,160,0.15)]" /></motion.div>
+                  <motion.div variants={fadeAnim}><AnswerButton answer={Answer.PROBABLY} label="Probably" index={2} colorClass="bg-accent-cyan/5 border-accent-cyan/30 hover:bg-accent-cyan/10 hover:border-accent-cyan focus-visible:ring-accent-cyan hover:shadow-[0_0_20px_rgba(0,194,255,0.15)]" /></motion.div>
+                  <motion.div variants={fadeAnim}><AnswerButton answer={Answer.DONT_KNOW} label="I Don't Know" index={3} colorClass="bg-bg-surface border-border-strong hover:bg-bg-elevated hover:border-border focus-visible:ring-white hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]" /></motion.div>
+                  <motion.div variants={fadeAnim}><AnswerButton answer={Answer.PROBABLY_NOT} label="Probably Not" index={4} colorClass="bg-accent-amber/5 border-accent-amber/30 hover:bg-accent-amber/10 hover:border-accent-amber focus-visible:ring-accent-amber hover:shadow-[0_0_20px_rgba(255,184,0,0.15)]" /></motion.div>
+                  <motion.div variants={fadeAnim}><AnswerButton answer={Answer.NO} label="No" index={5} colorClass="bg-accent-red/5 border-accent-red/30 hover:bg-accent-red/10 hover:border-accent-red focus-visible:ring-accent-red hover:shadow-[0_0_20px_rgba(255,71,87,0.15)]" /></motion.div>
+                </motion.div>
+                
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-center w-full"
+                >
+                  <span className={cn(
+                    "font-mono text-sm font-medium transition-colors duration-500",
+                    active_count <= 2 ? "text-accent-green" : active_count <= 5 ? "text-accent-amber" : "text-text-muted"
+                  )}>
+                    {active_count > 0 
+                      ? (active_count <= 2 ? "Getting very close..." : active_count <= 5 ? `Only ${active_count} places left...` : `Atlas is considering ${active_count} places`)
+                      : "Gathering intel..."}
+                  </span>
+                </motion.div>
               </div>
             </motion.div>
           )}

@@ -11,7 +11,6 @@ interface GameState {
   questions_asked: number;
   confidence: number;
   active_count: number;
-  top_candidates: TopCandidate[];
   current_question: Question | null;
   prediction: Prediction | null;
   alternatives: PlaceOut[];
@@ -30,7 +29,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   questions_asked: 0,
   confidence: 0,
   active_count: 0,
-  top_candidates: [],
   current_question: null,
   prediction: null,
   alternatives: [],
@@ -46,7 +44,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       set({
         sessionId: res.session_id,
         current_question: qRes.question || null,
-        top_candidates: (qRes.top_candidates || []).map(c => ({ ...c, probability: (c.probability || 0) * 100 })),
         questions_asked: qRes.questions_asked,
         confidence: (qRes.confidence || 0) * 100,
         active_count: qRes.active_places_count || 0,
@@ -71,7 +68,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       
       if (res.should_stop) {
         set({ 
-          top_candidates: (res.top_candidates || []).map(c => ({ ...c, probability: (c.probability || 0) * 100 })),
           active_count: res.active_places_count || 0,
           confidence: (res.confidence || 0) * 100,
           phase: 'predicting' 
@@ -82,7 +78,6 @@ export const useGameStore = create<GameState>((set, get) => ({
         const qRes = await gameApi.getQuestion(sessionId);
         set({
           current_question: qRes.question || null,
-          top_candidates: (qRes.top_candidates || []).map(c => ({ ...c, probability: (c.probability || 0) * 100 })),
           phase: 'questioning',
           questions_asked: qRes.questions_asked,
           active_count: qRes.active_places_count || 0,
@@ -90,13 +85,26 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
       }
     } catch (error: any) {
-      const isSessionError = error.response?.status === 400 || error.message?.includes('400');
-      const errorMessage = isSessionError 
-        ? 'Session expired. Please restart the game.' 
-        : (error.message || 'Failed to submit answer.');
-        
-      set({ error: errorMessage, phase: 'questioning' });
-      toast.error(errorMessage);
+      const status = error.response?.status;
+      const detail = error.response?.data?.detail || '';
+      
+      // Session not found = backend worker routing issue
+      // Show clear message, let user restart cleanly
+      if (status === 400 && detail.toLowerCase().includes('session')) {
+        set({ 
+          error: 'Game session lost due to server restart. Please start a new game.',
+          phase: 'idle',
+          sessionId: null,
+          current_question: null,
+          questions_asked: 0,
+          confidence: 0,
+          active_count: 0,
+        });
+        toast.error('Server restarted — please start a new game', { duration: 5000 });
+      } else {
+        set({ error: error.message || 'Failed to submit answer.', phase: 'questioning' });
+        toast.error('Something went wrong. Try again.');
+      }
     }
   },
 
@@ -114,13 +122,24 @@ export const useGameStore = create<GameState>((set, get) => ({
         phase: 'result'
       });
     } catch (error: any) {
-      const isSessionError = error.response?.status === 400 || error.message?.includes('400');
-      const errorMessage = isSessionError 
-        ? 'Session expired. Please restart the game.' 
-        : (error.message || 'Failed to get prediction.');
-        
-       set({ error: errorMessage, phase: 'questioning' });
-       toast.error(errorMessage);
+      const status = error.response?.status;
+      const detail = error.response?.data?.detail || '';
+
+      if (status === 400 && detail.toLowerCase().includes('session')) {
+        set({ 
+          error: 'Game session lost due to server restart. Please start a new game.',
+          phase: 'idle',
+          sessionId: null,
+          current_question: null,
+          questions_asked: 0,
+          confidence: 0,
+          active_count: 0,
+        });
+        toast.error('Server restarted — please start a new game', { duration: 5000 });
+      } else {
+        set({ error: error.message || 'Failed to get prediction.', phase: 'questioning' });
+        toast.error('Something went wrong. Try again.');
+      }
     }
   },
 
@@ -152,7 +171,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       questions_asked: 0,
       confidence: 0,
       active_count: 0,
-      top_candidates: [],
       current_question: null,
       prediction: null,
       alternatives: [],

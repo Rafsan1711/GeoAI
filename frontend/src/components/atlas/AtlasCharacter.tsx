@@ -11,12 +11,12 @@ export interface AtlasCharacterProps {
 }
 
 const getAtlasStage = (placesCount: number) => {
-  if (placesCount < 100) return { stage: "infant", emoji: "🍼", label: "Baby Atlas", message: "I'm just learning..." };
-  if (placesCount < 500) return { stage: "child", emoji: "🧒", label: "Young Atlas", message: "I know a few places!" };
-  if (placesCount < 1000) return { stage: "teen", emoji: "👦", label: "Atlas Jr.", message: "Getting smarter every day" };
-  if (placesCount < 3000) return { stage: "adult", emoji: "🧑‍💻", label: "Atlas", message: "I know this world well" };
-  if (placesCount < 8000) return { stage: "expert", emoji: "🧔", label: "Atlas the Explorer", message: "Ask me anything" };
-  return { stage: "sage", emoji: "🧙", label: "Atlas the Sage", message: "I know every corner of Earth" };
+  if (placesCount < 100) return { stage: "infant", emoji: "👶", label: "Baby Atlas", message: "I'm just learning..." };
+  if (placesCount < 500) return { stage: "child", emoji: "👦", label: "Young Atlas", message: "I know a few places!" };
+  if (placesCount < 1000) return { stage: "teen", emoji: "👨", label: "Atlas Jr.", message: "Getting smarter every day" };
+  if (placesCount < 3000) return { stage: "adult", emoji: "🧔", label: "Atlas", message: "I know this world well" };
+  if (placesCount < 8000) return { stage: "expert", emoji: "👴", label: "Atlas the Explorer", message: "Ask me anything" };
+  return { stage: "sage", emoji: "🧙‍♂️", label: "Atlas the Sage", message: "I know every corner of Earth" };
 };
 
 const sizeClasses = {
