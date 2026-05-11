@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-bg-base: #080C14;
+  --color-bg-surface: #0F1623;
+  --color-bg-elevated: #162030;
+  --color-border: #1E2D40;
+  --color-border-subtle: #142030;
+  --color-accent-cyan: #00C2FF;
+  --color-accent-green: #00E5A0;
+  --color-accent-amber: #FFB800;
+  --color-accent-red: #FF4757;
+  --color-text-primary: #EDF2F7;
+  --color-text-secondary: #8899AA;
+  --color-text-muted: #4A5568;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --animate-pulse-slow: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+
+  @keyframes pulse-slow {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  @keyframes loading-dot {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+}
+
+:root {
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  /* Exporting as plain CSS variables for component logic if needed */
+  --bg-base: #080C14;
+  --bg-surface: #0F1623;
+  --bg-elevated: #162030;
+  --border: #1E2D40;
+  --border-subtle: #142030;
+  --accent-cyan: #00C2FF;
+  --accent-green: #00E5A0;
+  --accent-amber: #FFB800;
+  --accent-red: #FF4757;
+  --text-primary: #EDF2F7;
+  --text-secondary: #8899AA;
+  --text-muted: #4A5568;
+}
+
+body {
+  font-family: var(--font-sans);
+}

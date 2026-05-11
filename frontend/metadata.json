@@ -1,0 +1,6 @@
+{
+  "name": "GuessMyPlace",
+  "description": "An AI-powered geographic guessing game using React, TailwindCSS, and framer-motion.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
