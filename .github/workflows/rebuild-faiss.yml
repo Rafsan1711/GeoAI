@@ -1,0 +1,29 @@
+# .github/workflows/rebuild-faiss.yml
+name: Rebuild FAISS Index
+
+on:
+  # AtlasMind এ নতুন places add হলে manually trigger করো
+  workflow_dispatch:
+  # অথবা weekly
+  schedule:
+    - cron: "0 4 * * 1"   # Monday 4:00 AM UTC
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: cd backend && pip install -r requirements.txt faiss-cpu
+      - name: Rebuild FAISS index
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          cd backend
+          python -c "
+          from atlas_engine.faiss_index import build_index
+          ok = build_index()
+          print('✅ Index built' if ok else '❌ Build failed')
+          "

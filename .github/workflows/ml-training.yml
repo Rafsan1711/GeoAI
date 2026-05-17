@@ -1,0 +1,27 @@
+name: Weekly ML Training
+
+on:
+  schedule:
+    - cron: "0 3 * * 0"   # Every Sunday 3:00 AM UTC
+  workflow_dispatch:
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: cd backend && pip install -r requirements.txt scikit-learn
+      - name: Run ML training
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ENVIRONMENT:               production
+          LOG_LEVEL:                 INFO
+        run: |
+          cd backend
+          python scripts/train_feature_importance.py

@@ -3,8 +3,7 @@ Game API endpoints — v2.
 Session state stored in Redis (falls back to in-memory dict).
 """
 
-import json
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from app.models.schemas import (
     StartGameRequest, AnswerRequest, QuestionRequest,
     PredictRequest, FeedbackRequest,
@@ -23,18 +22,11 @@ router = APIRouter()
 # Fallback in-memory store when Redis unavailable
 _memory_sessions: dict[str, dict] = {}
 
-# Single engine instance (shared, stateless logic)
+# Single engine instance — stateless logic, shared across requests
 _engine = InferenceEngine()
 
-# Load feature importance at module load
-try:
-    _fi_rows = SupabaseService.get_feature_importance()
-    if _fi_rows:
-        _engine.load_feature_importance(_fi_rows)
-        logger.info("Feature importance loaded", attributes=len(_fi_rows))
-except Exception as e:
-    logger.warning("Could not load feature importance", error=str(e))
 
+# ── Session helpers ───────────────────────────────────────────
 
 async def _save(session_id: str, session: dict):
     ok = await RedisService.save_session(session_id, session)
@@ -54,18 +46,34 @@ async def _delete(session_id: str):
     _memory_sessions.pop(session_id, None)
 
 
+# ── Endpoints ─────────────────────────────────────────────────
+
 @router.post("/game/start", response_model=StartGameResponse)
 async def start_game(req: StartGameRequest):
     places    = SupabaseService.get_all_active_places(req.place_type)
     questions = SupabaseService.get_all_questions(req.place_type)
 
     if not places:
-        raise HTTPException(400, "No places found. Check database.")
+        raise HTTPException(
+            status_code=503,
+            detail="No places found in database. Please check Supabase."
+        )
     if not questions:
-        raise HTTPException(400, "No questions found. Check database.")
+        raise HTTPException(
+            status_code=503,
+            detail="No questions found in database. Please check Supabase."
+        )
 
     session = _engine.start_game(places, questions)
     await _save(session["session_id"], session)
+
+    logger.info(
+        "Game started",
+        session_id=session["session_id"],
+        place_type=req.place_type or "all",
+        places=len(places),
+        questions=len(questions),
+    )
 
     return StartGameResponse(
         session_id=session["session_id"],
@@ -78,12 +86,22 @@ async def start_game(req: StartGameRequest):
 async def get_question(req: QuestionRequest):
     session = await _load(req.session_id)
     if not session:
-        raise HTTPException(400, "Session not found or expired.")
+        raise HTTPException(
+            status_code=400,
+            detail="Session not found or expired. Please start a new game."
+        )
 
     active  = [i for i in session["items"] if not i["eliminated"]]
     conf    = _engine.conf_calc.calculate(active)
     top     = _engine._top_candidates(active, 10)
-    top_out = [TopCandidate(name=c["name"], emoji=c.get("emoji"), probability=c["probability"]) for c in top]
+    top_out = [
+        TopCandidate(
+            name=c["name"],
+            emoji=c.get("emoji"),
+            probability=c["probability"],
+        )
+        for c in top
+    ]
 
     question = _engine.get_next_question(session)
     await _save(req.session_id, session)
@@ -111,13 +129,20 @@ async def get_question(req: QuestionRequest):
 async def process_answer(req: AnswerRequest):
     session = await _load(req.session_id)
     if not session:
-        raise HTTPException(400, "Session not found or expired.")
+        raise HTTPException(
+            status_code=400,
+            detail="Session not found or expired. Please start a new game."
+        )
 
-    result  = _engine.process_answer(session, req.answer.value)
+    result = _engine.process_answer(session, req.answer.value)
     await _save(req.session_id, session)
 
     top_out = [
-        TopCandidate(name=c["name"], emoji=c.get("emoji"), probability=c["probability"])
+        TopCandidate(
+            name=c["name"],
+            emoji=c.get("emoji"),
+            probability=c["probability"],
+        )
         for c in result["top_candidates"]
     ]
 
@@ -134,24 +159,48 @@ async def process_answer(req: AnswerRequest):
 async def predict(req: PredictRequest):
     session = await _load(req.session_id)
     if not session:
-        raise HTTPException(400, "Session not found or expired.")
+        raise HTTPException(
+            status_code=400,
+            detail="Session not found or expired. Please start a new game."
+        )
 
     result = _engine.get_prediction(session)
-    await _delete(req.session_id)
+
+    # Log to Supabase (best-effort, don't block)
+    try:
+        SupabaseService.log_game_result({
+            "session_token":    req.session_id,
+            "status":           "active",
+            "final_confidence": result["confidence"],
+            "questions_asked":  result["questions_asked"],
+        })
+    except Exception:
+        pass
+
+    # Don't delete session yet — user needs to confirm correct/incorrect
+    await _save(req.session_id, session)
 
     pred_out = None
     if result["prediction"]:
         p = result["prediction"]
         pred_out = PlaceOut(
-            id=p["id"], name=p["name"], type=p["type"],
-            emoji=p.get("emoji"), description=p.get("description"),
+            id=p["id"],
+            name=p["name"],
+            type=p["type"],
+            emoji=p.get("emoji"),
+            description=p.get("description"),
             fun_fact=p.get("fun_fact"),
         )
 
     alts_out = [
-        PlaceOut(id=a["id"], name=a["name"], type=a["type"],
-                 emoji=a.get("emoji"), description=a.get("description"),
-                 fun_fact=a.get("fun_fact"))
+        PlaceOut(
+            id=a["id"],
+            name=a["name"],
+            type=a["type"],
+            emoji=a.get("emoji"),
+            description=a.get("description"),
+            fun_fact=a.get("fun_fact"),
+        )
         for a in result["alternatives"]
     ]
 
@@ -169,7 +218,10 @@ async def predict(req: PredictRequest):
 async def feedback(req: FeedbackRequest):
     session = await _load(req.session_id)
     if not session:
-        raise HTTPException(400, "Session not found or expired.")
+        raise HTTPException(
+            status_code=400,
+            detail="Session not found or expired."
+        )
 
     correct_id = req.actual_place_id
     if not correct_id and req.actual_place_name:
@@ -180,12 +232,49 @@ async def feedback(req: FeedbackRequest):
     if correct_id:
         _engine.apply_feedback(session, correct_id)
         await _save(req.session_id, session)
+
+        # Update session status in Supabase
+        try:
+            SupabaseService.log_game_result({
+                "session_token":       req.session_id,
+                "status":              "incorrect",
+                "corrected_place_id":  correct_id,
+                "questions_asked":     session["questions_asked"],
+            })
+        except Exception:
+            pass
+
+        logger.info(
+            "Feedback applied",
+            session_id=req.session_id,
+            correct_id=correct_id,
+        )
+
         return FeedbackResponse(
             status="learning",
-            message="Got it! I'll keep trying.",
+            message="Got it! Atlas is learning from this. Try another place!",
         )
 
     return FeedbackResponse(
         status="unknown_place",
-        message="Place not found in database. Consider adding it via AtlasMind.",
+        message="Place not found in database yet. We'll add it soon via AtlasMind!",
     )
+
+
+@router.post("/game/correct")
+async def mark_correct(req: PredictRequest):
+    """Call this when user confirms Atlas was correct."""
+    session = await _load(req.session_id)
+
+    if session:
+        try:
+            SupabaseService.log_game_result({
+                "session_token":    req.session_id,
+                "status":           "correct",
+                "questions_asked":  session["questions_asked"],
+            })
+        except Exception:
+            pass
+        await _delete(req.session_id)
+
+    return {"status": "ok", "message": "Atlas scores another point! 🎉"}
