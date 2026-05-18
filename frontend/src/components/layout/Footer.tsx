@@ -1,13 +1,23 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { AtlasCharacter } from '../atlas/AtlasCharacter';
+import { AtlasCharacter, AtlasStatsBar } from '../atlas';
+import { useQuery } from '@tanstack/react-query';
+import { getDetailedHealth } from '../../api/health';
 
 export const Footer: React.FC = () => {
+  const { data: healthData } = useQuery({
+    queryKey: ['health', 'detailed'],
+    queryFn: getDetailedHealth,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const placesCount = healthData?.total_places || '--';
+
   return (
     <footer className="bg-bg-base border-t border-border py-12 px-4 sm:px-6 lg:px-8 mt-auto relative overflow-hidden">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center space-y-8 md:space-y-0">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center space-y-8 md:space-y-0 relative z-10">
         
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-4 max-w-lg">
           <div className="flex items-center space-x-3">
             <div className="text-xl tracking-tight">
               <span className="font-bold text-text-primary">Guess</span>
@@ -22,9 +32,12 @@ export const Footer: React.FC = () => {
             <Link to="/admin" className="hover:text-text-primary transition-colors">Admin</Link>
             <a href="https://github.com/rafsan1711/geoai" target="_blank" rel="noreferrer" className="hover:text-text-primary transition-colors">GitHub</a>
           </div>
-          <p className="text-xs text-text-muted mt-2">
-            Built with Atlas GMP Engine v2.0.0 &middot; Open source &middot; GPL-3.0
-          </p>
+          <div className="flex flex-col space-y-2 mt-4">
+            <p className="text-xs text-text-muted">
+              Built with Atlas GMP Engine v2.0.0 &middot; Currently knows {placesCount} places
+            </p>
+            <AtlasStatsBar className="justify-start opacity-70" showZero={false} />
+          </div>
         </div>
 
         <div className="flex items-center space-x-4">
@@ -38,3 +51,4 @@ export const Footer: React.FC = () => {
     </footer>
   );
 };
+

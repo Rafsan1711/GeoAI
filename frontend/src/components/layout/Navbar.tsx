@@ -5,10 +5,30 @@ import { Menu, X } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { AtlasCharacter } from '../atlas/AtlasCharacter';
 import { cn } from '../../lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { getDetailedHealth } from '../../api/health';
 
 export const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+
+  const { data: healthData } = useQuery({
+    queryKey: ['health', 'detailed'],
+    queryFn: getDetailedHealth,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const placesCount = healthData?.data_stats 
+    ? Object.values(healthData.data_stats).reduce((sum, t) => sum + t.count, 0)
+    : 0;
+
+  const stageLabel = placesCount < 100 ? "Baby Atlas" :
+                     placesCount < 500 ? "Young Atlas" :
+                     placesCount < 1000 ? "Atlas Jr." :
+                     placesCount < 3000 ? "Atlas" :
+                     placesCount < 8000 ? "Atlas the Explorer" : "Atlas the Sage";
+
+  const tooltipText = `${stageLabel} — knows ${placesCount || '--'} places`;
 
   const navLinks = [
     { name: 'Play', path: '/game' },
@@ -23,8 +43,14 @@ export const Navbar: React.FC = () => {
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#080C14]/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-3 group outline-none">
-            <img src="/logo.png" className="w-9 h-9 rounded-xl shadow-[0_0_15px_rgba(0,194,255,0.3)]" alt="GuessMyPlace" />
+          <Link to="/" className="flex items-center space-x-3 group outline-none overflow-visible">
+            <div className="relative group" title={tooltipText}>
+              <AtlasCharacter size="sm" showLabel={false} animate={false} />
+              {/* Force border-2 removal class since we want to overwrite sm style if needed, but keeping sm as is fine */}
+              <div className="absolute top-14 left-1/2 -translate-x-1/2 whitespace-nowrap bg-bg-elevated border border-border px-3 py-1.5 rounded-lg text-xs font-mono text-text-muted opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                {tooltipText}
+              </div>
+            </div>
             <div className="text-xl tracking-tight hidden sm:block">
               <span className="font-bold text-text-primary">Guess</span>
               <span className="font-bold text-accent-cyan">My</span>
@@ -61,6 +87,7 @@ export const Navbar: React.FC = () => {
               <Link to="/game">Play Now</Link>
             </Button>
           </nav>
+
 
           {/* Mobile Menu Toggle */}
           <button

@@ -176,7 +176,7 @@ export default function Game() {
                       <span className="text-4xl group-hover:scale-110 transition-transform origin-center">🌍</span>
                       <div>
                         <h3 className="text-xl font-bold text-text-primary">Countries</h3>
-                        <p className="text-text-secondary text-sm">{placesCount !== '--' ? `${placesCount} places active` : '193 nations & territories'}</p>
+                        <p className="text-text-secondary text-sm">{healthData?.data_stats?.country?.count !== undefined ? `${healthData.data_stats.country.count} places` : '193 places'}</p>
                       </div>
                     </div>
                     <ChevronRight className="w-6 h-6 text-accent-cyan opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all" />

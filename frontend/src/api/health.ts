@@ -1,17 +1,16 @@
 import client from './client';
 
 export interface HealthDetailedResponse {
-  engine: string;
   status: string;
   version: string;
-  data_stats: {
-    city: { count: number };
-    country: { count: number };
-    place: { count: number };
-  };
+  engine: string;
+  data_stats: Record<string, { count: number }>;
+  total_places: number;
+  total_questions: number;
+  latest_accuracy: number | null;
 }
 
 export const getDetailedHealth = async (): Promise<HealthDetailedResponse> => {
-  const { data } = await client.get<HealthDetailedResponse>('/health');
+  const { data } = await client.get<HealthDetailedResponse>('/health/detailed');
   return data;
 };

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { motion, useAnimation, useInView } from 'framer-motion';
+import { motion, useAnimation, useInView, animate } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Brain, MessageCircle, TrendingUp, MapPin } from 'lucide-react';
 import { PageWrapper } from '../components/layout';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { AtlasCharacter, AtlasBubble } from '../components/atlas';
+import { AtlasCharacter, AtlasBubble, AtlasStatsBar } from '../components/atlas';
 import { useQuery } from '@tanstack/react-query';
 import { getDetailedHealth } from '../api/health';
 
@@ -25,11 +25,29 @@ const staggerContainer = {
   }
 };
 
-const AnimatedCounter = ({ value, label, icon: Icon }: { value: number | string, label: string, icon?: React.ElementType }) => {
+const CountUp = ({ value, duration = 1.5 }: { value: number, duration?: number }) => {
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    const controls = animate(0, value, {
+      duration,
+      ease: "easeOut",
+      onUpdate: (v) => setCount(Math.floor(v))
+    });
+    return controls.stop;
+  }, [value, duration]);
+
+  return <span>{count}</span>;
+};
+
+const AnimatedCounter = ({ value, label, icon: Icon, isNumeric = false }: { value: number | string, label: string, icon?: React.ElementType, isNumeric?: boolean }) => {
   return (
     <div className="flex flex-col items-center p-4 bg-bg-surface/50 border border-border-subtle rounded-2xl backdrop-blur-md">
       {Icon && <Icon className="w-6 h-6 text-accent-cyan mb-2" />}
-      <span className="font-mono text-xl sm:text-2xl font-bold text-accent-cyan">{value}</span>
+      <span className="font-mono text-xl sm:text-2xl font-bold text-accent-cyan">
+        {isNumeric && typeof value === 'number' ? <CountUp value={value} /> : value}
+        {isNumeric && typeof value === 'number' ? '+' : ''}
+      </span>
       <span className="text-xs sm:text-sm text-text-muted text-center mt-1">{label}</span>
     </div>
   );
@@ -42,12 +60,14 @@ export default function Landing() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const placesCount = healthData 
-    ? (healthData.data_stats?.country?.count || 0) + 
-      (healthData.data_stats?.city?.count || 0) + 
-      (healthData.data_stats?.place?.count || 0)
-    : '--';
-  const questionsCount = "--"; // We don't have this in DetailedHealth mock yet, but we can display a placeholder or derive it. Actually Let's show active_places and just a static large number or omit. Let's just say "15k+" for now if not available.
+  const validTypesCount = healthData?.data_stats 
+    ? Object.values(healthData.data_stats).filter(v => v.count > 0).length 
+    : 0;
+    
+  const placesCount = healthData?.total_places || '--';
+  const countryCount = healthData?.data_stats?.country?.count || '--';
+  const displayPlacesCount = validTypesCount > 1 ? placesCount : countryCount;
+  const displayPlacesLabel = validTypesCount > 1 ? 'Places Known' : 'Countries';
 
   return (
     <PageWrapper>
@@ -90,7 +110,7 @@ export default function Landing() {
             </motion.p>
             
             <motion.div variants={fadeUp} className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl mb-10">
-              <AnimatedCounter value="115+" label="Countries" icon={MapPin} />
+              <AnimatedCounter value={displayPlacesCount} label={displayPlacesLabel} icon={MapPin} isNumeric={typeof displayPlacesCount === 'number'} />
               <AnimatedCounter value="Smart" label="Questions" icon={MessageCircle} />
               <AnimatedCounter value="Daily" label="Gets Smarter" icon={Brain} />
             </motion.div>
@@ -119,16 +139,14 @@ export default function Landing() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            <div className="relative mb-8">
+            <div className="relative mb-2">
               <div className="absolute -top-16 -right-12 z-20 transform rotate-2">
                 <AtlasBubble message="Think of any place on Earth. I'll figure it out." side="right" typing={true} />
               </div>
               <AtlasCharacter size="xl" showLabel={false} animate={true} />
             </div>
             
-            <div className="font-mono text-sm text-text-muted mt-8 bg-bg-surface/50 border border-border-subtle rounded-lg px-4 py-2 backdrop-blur-sm">
-              Currently knows {placesCount} places
-            </div>
+            <AtlasStatsBar className="mt-8 bg-bg-surface/50 border border-border-subtle rounded-lg px-4 py-3 backdrop-blur-sm shadow-xl" />
           </motion.div>
 
         </div>
